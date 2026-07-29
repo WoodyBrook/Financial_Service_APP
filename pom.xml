@@ -21,6 +21,10 @@
         <!-- Lombok cannot run under the JDK 23 that is default on the build machines, and no JDK 21
              is installed. 17 is the highest level that builds everywhere the team has today. -->
         <java.version>17</java.version>
+        <!-- The build machines run JDK 26, which Lombok 1.18.34 (the version inherited from
+             Spring Boot 3.3.5) cannot run its annotation processor on. 1.18.36 is the first
+             release that supports it; override the managed version explicitly. -->
+        <lombok.version>1.18.42</lombok.version>
         <springdoc.version>2.6.0</springdoc.version>
     </properties>
 
@@ -83,6 +87,37 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-jdk</id>
+                        <goals><goal>enforce</goal></goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>[17,18)</version>
+                                    <message>This project requires JDK 17. Set JAVA_HOME to a JDK 17 installation, or use ./mvnw via run.sh.</message>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

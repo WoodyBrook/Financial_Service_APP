@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AML 双通道现场演示｜组内学习与操作指南</title>
+  <style>
+    :root {
+      --bg: #f3f5f8;
+      --paper: #ffffff;
+      --ink: #152332;
+      --body: #36495d;
+      --muted: #6b7f92;
+      --line: #dbe3eb;
+      --navy: #102d49;
+      --blue: #235b87;
+      --blue-soft: #eaf2f8;
+      --red: #b00020;
+      --red-soft: #fbeaec;
+      --amber: #9a5b00;
+      --amber-soft: #fff3df;
+      --green: #26734b;
+      --green-soft: #e8f4ed;
+      --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+              "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--body);
+      font: 16px/1.75 var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--blue); text-underline-offset: 3px; }
+    strong { color: var(--ink); }
+    code, .ui {
+      font-family: var(--mono);
+      color: var(--ink);
+      background: #edf1f5;
+      border-radius: 4px;
+      padding: 0.12em 0.4em;
+    }
+    pre {
+      margin: 0.8rem 0 0;
+      padding: 0.9rem 1rem;
+      overflow-x: auto;
+      border-radius: 7px;
+      background: #0d263e;
+      color: #e2edf6;
+      font: 0.83rem/1.65 var(--mono);
+    }
+
+    .hero {
+      color: #fff;
+      background:
+        radial-gradient(circle at 86% 15%, rgba(255,255,255,.13), transparent 28%),
+        linear-gradient(135deg, #0b233a, #164467 72%, #7f0014 145%);
+      padding: 4rem 1.5rem 3.6rem;
+    }
+    .hero-inner, .layout { max-width: 1120px; margin: 0 auto; }
+    .eyebrow {
+      margin: 0 0 0.65rem;
+      color: #ffbdc4;
+      font: 700 .72rem/1 var(--mono);
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      max-width: 18em;
+      color: #fff;
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      line-height: 1.2;
+      letter-spacing: -.035em;
+    }
+    .lede { max-width: 52em; margin: 1rem 0 0; color: #d8e6f1; font-size: 1.08rem; }
+    .chips { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: 1.35rem; }
+    .chip {
+      border: 1px solid rgba(255,255,255,.27);
+      border-radius: 999px;
+      background: rgba(255,255,255,.07);
+      padding: .25rem .65rem;
+      color: #f0f6fa;
+      font-size: .8rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 230px minmax(0, 1fr);
+      gap: 2rem;
+      padding: 2.2rem 1.5rem 6rem;
+    }
+    .toc {
+      position: sticky;
+      top: 1.2rem;
+      align-self: start;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      padding: 1rem;
+    }
+    .toc h2 {
+      margin: 0 0 .65rem;
+      color: var(--muted);
+      font: 700 .72rem/1 var(--mono);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .toc a {
+      display: block;
+      padding: .34rem .45rem;
+      border-radius: 4px;
+      color: var(--body);
+      text-decoration: none;
+      font-size: .9rem;
+    }
+    .toc a:hover { background: var(--blue-soft); color: var(--navy); }
+
+    main { min-width: 0; }
+    section {
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--paper);
+      padding: 1.5rem 1.65rem;
+      box-shadow: 0 5px 18px rgba(24, 47, 69, .045);
+    }
+    h2 { margin: 0 0 1rem; color: var(--ink); font-size: 1.45rem; line-height: 1.3; }
+    h3 { margin: 1.4rem 0 .55rem; color: var(--ink); font-size: 1.04rem; }
+    h3:first-child { margin-top: 0; }
+    p { margin: 0 0 .9rem; }
+    ul, ol { margin: .55rem 0 1rem; padding-left: 1.35rem; }
+    li { margin: .35rem 0; }
+
+    .section-kicker {
+      display: block;
+      margin-bottom: .35rem;
+      color: var(--blue);
+      font: 700 .7rem/1 var(--mono);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .callout {
+      margin: 1rem 0;
+      padding: .95rem 1.05rem;
+      border-left: 4px solid var(--blue);
+      border-radius: 5px;
+      background: var(--blue-soft);
+    }
+    .callout.warn { border-color: var(--amber); background: var(--amber-soft); }
+    .callout.good { border-color: var(--green); background: var(--green-soft); }
+    .callout.red { border-color: var(--red); background: var(--red-soft); }
+    .callout p:last-child { margin-bottom: 0; }
+    .tag {
+      display: block;
+      margin-bottom: .3rem;
+      color: var(--blue);
+      font: 700 .68rem/1 var(--mono);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .warn .tag { color: var(--amber); }
+    .good .tag { color: var(--green); }
+    .red .tag { color: var(--red); }
+
+    .story-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .85rem;
+      margin: 1rem 0;
+    }
+    .story-card {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 1rem;
+      background: #fbfcfd;
+    }
+    .story-card .n { color: var(--red); font: 700 .72rem/1 var(--mono); letter-spacing: .1em; }
+    .story-card h3 { margin: .4rem 0 .4rem; }
+    .story-card p { margin: 0; font-size: .93rem; }
+
+    .steps { counter-reset: step; list-style: none; padding: 0; }
+    .steps > li {
+      counter-increment: step;
+      position: relative;
+      margin: 0 0 1rem;
+      padding: 0 0 1rem 2.8rem;
+      border-bottom: 1px solid #e9eef3;
+    }
+    .steps > li:last-child { border-bottom: 0; padding-bottom: 0; }
+    .steps > li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: .12rem;
+      display: grid;
+      place-items: center;
+      width: 1.85rem;
+      height: 1.85rem;
+      border-radius: 50%;
+      background: var(--navy);
+      color: #fff;
+      font: 700 .8rem/1 var(--mono);
+    }
+    .steps p { margin: .3rem 0; }
+    .do { color: var(--blue); font-weight: 700; }
+    .see { color: var(--green); font-weight: 700; }
+    .say { color: var(--red); font-weight: 700; }
+
+    .table-wrap { overflow-x: auto; margin: 1rem 0; border: 1px solid var(--line); border-radius: 7px; }
+    table { width: 100%; border-collapse: collapse; min-width: 620px; background: var(--paper); }
+    th, td { padding: .72rem .85rem; border-bottom: 1px solid #e8edf2; text-align: left; vertical-align: top; }
+    th { background: #edf2f6; color: var(--muted); font-size: .78rem; letter-spacing: .05em; text-transform: uppercase; }
+    tbody tr:last-child td { border-bottom: 0; }
+    td.num { font-family: var(--mono); white-space: nowrap; color: var(--ink); }
+
+    .quote {
+      margin: .85rem 0;
+      padding: .95rem 1.1rem;
+      border-left: 4px solid var(--red);
+      background: #fff7f8;
+      color: var(--ink);
+      font-size: 1.01rem;
+    }
+    .quote::before { content: "建议口播"; display: block; margin-bottom: .35rem; color: var(--red); font: 700 .68rem/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+
+    .checklist { list-style: none; padding: 0; }
+    .checklist li { position: relative; padding-left: 1.65rem; }
+    .checklist li::before { content: "□"; position: absolute; left: 0; color: var(--blue); font-weight: 700; }
+
+    .footer-note { margin-top: 2rem; color: var(--muted); font-size: .86rem; text-align: center; }
+    .no-break { break-inside: avoid; }
+
+    @media (max-width: 820px) {
+      .layout { grid-template-columns: 1fr; }
+      .toc { position: static; }
+      .story-grid { grid-template-columns: 1fr; }
+    }
+    @media print {
+      body { background: #fff; font-size: 10.5pt; }
+      .hero { padding: 1.5rem 0; background: #fff; color: #000; border-bottom: 2px solid #000; }
+      .hero h1, .hero .lede, .eyebrow { color: #000; }
+      .chips, .toc { display: none; }
+      .layout { display: block; max-width: none; padding: 1.2rem 0; }
+      section { box-shadow: none; break-inside: avoid; }
+      a { color: #000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">Internal learning guide · AML Alert Triage</p>
+      <h1>AML 双通道现场演示<br />组内学习与操作指南</h1>
+      <p class="lede">
+        供组员理解故事逻辑、课前排练和现场照着操作。本文档不属于 Demo 产品页面，也不向观众展示。
+      </p>
+      <div class="chips">
+        <span class="chip">建议时长 8–12 分钟</span>
+        <span class="chip">演示客户 ACME Trading Ltd</span>
+        <span class="chip">操作者 sarah.chen</span>
+        <span class="chip">业务时间统一使用 UTC</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="toc" aria-label="目录">
+      <h2>目录</h2>
+      <a href="#purpose">1. 先理解故事</a>
+      <a href="#preflight">2. 演示前准备</a>
+      <a href="#act1">3. 第一幕：付款释放</a>
+      <a href="#act2">4. 第二幕：夜间监控</a>
+      <a href="#act3">5. 第三幕：Sarah 调查</a>
+      <a href="#act4">6. 第四幕：制裁对照</a>
+      <a href="#language">7. 合规用词</a>
+      <a href="#recovery">8. 故障恢复</a>
+      <a href="#quickrun">9. 一页速查</a>
+    </nav>
+
+    <main>
+      <section id="purpose">
+        <span class="section-kicker">01 · Story logic</span>
+        <h2>先理解故事：两条控制链，不是同一个“风险分数”</h2>
+        <div class="story-grid">
+          <article class="story-card">
+            <span class="n">ACT 1</span>
+            <h3>付款入口：没有名单命中</h3>
+            <p>Sahel Logistics 付款经过同步制裁筛查，没有潜在名单匹配，因此执行。</p>
+          </article>
+          <article class="story-card">
+            <span class="n">ACT 2</span>
+            <h3>客户行为：出现异常组合</h3>
+            <p>夜间监控回看完整行为窗口，把金额偏离、快速分散、新对手方和较高风险辖区组合成可解释案件。</p>
+          </article>
+          <article class="story-card">
+            <span class="n">ACT 3</span>
+            <h3>人机协作：AI 整理，人做决定</h3>
+            <p>AI 起草调查材料；Sarah 修改措辞、接受草稿并决定内部升级，所有动作进入审计轨迹。</p>
+          </article>
+          <article class="story-card">
+            <span class="n">ACT 4</span>
+            <h3>付款入口：潜在名单匹配</h3>
+            <p>Vladmir Petrov 的姓名高度相似，DOB 和国籍一致，因此付款先不执行，交由制裁复核。</p>
+          </article>
+        </div>
+        <div class="callout good">
+          <span class="tag">核心结论</span>
+          <p><strong>交易监控</strong>保护客户行为监控链路；<strong>制裁筛查</strong>保护付款入口。制裁信号不会进入 AML 案件优先级分数。</p>
+        </div>
+      </section>
+
+      <section id="preflight">
+        <span class="section-kicker">02 · Pre-flight</span>
+        <h2>演示前准备</h2>
+        <h3>启动服务</h3>
+        <p>在项目根目录运行：</p>
+        <pre>docker compose up -d --build</pre>
+        <p>打开演示控制台：<a href="http://localhost:8080/demo.html">http://localhost:8080/demo.html</a></p>
+
+        <h3>开始前检查</h3>
+        <ul class="checklist">
+          <li>浏览器缩放建议保持 90%–100%，关闭无关标签页和通知。</li>
+          <li>点击右上角 <span class="ui">Reset demo</span>，等待页面回到 <span class="ui">Step 1 of 5 — Create Payment A</span>。</li>
+          <li>确认页面没有红色错误横幅，主按钮可点击。</li>
+          <li>确认顶部时间轴显示 Yesterday 16:10–17:05、Yesterday 16:52、Today 02:00、Now。</li>
+          <li>排练时完成一次全流程；正式演示前必须再次 Reset。</li>
+        </ul>
+        <div class="callout warn">
+          <span class="tag">避免误操作</span>
+          <p>在 Step 1–3 期间不要从 Case Queue 点击全局 <span class="ui">Run monitoring</span>。只使用 Live Demo 页面中央的步骤按钮。</p>
+          <p>每次点击后等页面出现下一步按钮再继续，不要连续双击。</p>
+        </div>
+      </section>
+
+      <section id="act1">
+        <span class="section-kicker">03 · Act 1</span>
+        <h2>第一幕：昨天 16:52，付款通过</h2>
+        <ol class="steps">
+          <li>
+            <p><span class="do">按键：</span>点击 <span class="ui">Create Payment A</span>。</p>
+            <p><span class="see">应看到：</span>Payment A 卡片出现，状态为 <strong>RELEASED</strong>，付款参考号为 <strong>PAY-000001</strong>，业务时间为 <strong>27 Jul, 16:52</strong>，Screening outcome 为 <strong>No potential sanctions match</strong>。</p>
+          </li>
+          <li>
+            <p><span class="do">停留：</span>指向 Status 和 Screening outcome，不要急着进入下一步。</p>
+          </li>
+        </ol>
+        <div class="quote">
+          ACME 提交 £26,000 给 Sahel Logistics。付款首先经过制裁筛查，没有发现潜在名单匹配，因此被释放执行。这里的结论不是“安全”，只是“没有名单命中”。
+        </div>
+        <div class="callout red">
+          <span class="tag">不要说</span>
+          <p>不要说“系统确认这笔付款安全”或“客户没有风险”。当前控制只回答：<strong>是否出现潜在制裁名单匹配</strong>。</p>
+        </div>
+      </section>
+
+      <section id="act2">
+        <span class="section-kicker">04 · Act 2</span>
+        <h2>第二幕：完整活动窗口与夜间监控</h2>
+        <h3>2A. 补全当天活动</h3>
+        <ol class="steps">
+          <li>
+            <p><span class="do">按键：</span>点击 <span class="ui">Complete day activity</span>。</p>
+            <p><span class="see">应看到：</span>That day's activity 卡片显示：</p>
+            <ul>
+              <li><strong>8</strong> transactions over <strong>55</strong> minutes</li>
+              <li><strong>£84,200.00</strong> inbound</li>
+              <li><strong>£77,464.00</strong> outbound</li>
+              <li><strong>92.0%</strong> dispersal ratio</li>
+              <li><strong>4</strong> first-time beneficiaries</li>
+            </ul>
+          </li>
+        </ol>
+        <div class="quote">
+          现在回看昨天 16:10 到 17:05 的完整活动窗口。系统看到包括刚才那笔付款在内的八笔交易：£84,200 流入，随后 92% 快速流出，流向五个收款方，其中四个是新对手方。
+        </div>
+        <div class="callout warn">
+          <span class="tag">时间线口径</span>
+          <p>不要说“付款之后又发生了七笔”。Payment A 位于 16:52；正确说法是“回看 16:10–17:05 的完整窗口，共八笔交易”。</p>
+        </div>
+
+        <h3>2B. 运行夜间监控</h3>
+        <ol class="steps">
+          <li>
+            <p><span class="do">按键：</span>点击 <span class="ui">Run overnight monitoring</span>。</p>
+            <p><span class="see">应看到：</span>New cases = <strong>1</strong>；ACME 案件为 <strong>CASE-2026-0016</strong>；Priority 为 <strong>RED · score 83</strong>；Opened by 显示 <strong>28 Jul, 02:00</strong>。</p>
+          </li>
+          <li>
+            <p><span class="do">按键：</span>点击 <span class="ui">Open the case Sarah is investigating</span>。</p>
+          </li>
+        </ol>
+        <div class="quote">
+          到了夜间监控批次，系统不再孤立地看一笔付款，而是回看 ACME 的整体行为。系统发现了需要解释的异常活动，并把案件排到 Sarah 的队列前列。分数决定先看谁，不决定谁有罪。
+        </div>
+      </section>
+
+      <section id="act3">
+        <span class="section-kicker">05 · Act 3</span>
+        <h2>第三幕：Sarah 调查、AI 草稿与内部升级</h2>
+        <h3>3A. 展开规则证据</h3>
+        <ol class="steps">
+          <li>
+            <p><span class="do">按键：</span>依次点击 R1、R2、R3、R4 四条规则标题展开证据。</p>
+            <p><span class="see">应看到：</span>四条规则分数相加等于案件总分 83。</p>
+          </li>
+        </ol>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>规则</th><th>应看到的关键证据</th><th>分数</th></tr></thead>
+            <tbody>
+              <tr><td><strong>R1 Amount deviation</strong></td><td>24h 流入 £84,200；90 天日流入中位数约 £9,535.86；比值 8.83×</td><td class="num">30</td></tr>
+              <tr><td><strong>R2 Rapid dispersal</strong></td><td>流出 £77,464；分散比例 0.92×；5 个对手方；约 0.9h</td><td class="num">27</td></tr>
+              <tr><td><strong>R3 New counterparties</strong></td><td>4 个新对手方；证据中包含 PAY-000001</td><td class="num">16</td></tr>
+              <tr><td><strong>R4 Higher-risk jurisdiction</strong></td><td>流向 NG 的 £26,000；1 笔；证据为 PAY-000001</td><td class="num">10</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>3B. 查看交易时间线</h3>
+        <ol class="steps">
+          <li>
+            <p><span class="do">操作：</span>向下滚动到 <span class="ui">Transaction timeline</span>。</p>
+            <p><span class="see">应看到：</span>16:10–17:05 共八笔交易；<strong>PAY-000001</strong> 在 16:52 被高亮并标记 focus，状态仍为 RELEASED。</p>
+          </li>
+        </ol>
+        <div class="quote">
+          每一分都可以回到具体规则和具体交易。这里显示的是需要调查的行为模式，不是对洗钱行为的认定。
+        </div>
+
+        <h3>3C. 生成并修订 AI 草稿</h3>
+        <ol class="steps">
+          <li>
+            <p><span class="do">按键：</span>点击 <span class="ui">Generate draft</span>。</p>
+            <p><span class="see">应看到：</span>结构化草稿、Confirmed observations、Unexplained questions、Suggested next checks，以及可跳转的证据标签。使用容器启动时通常显示 <strong>model=template</strong>，这是正常的离线 fallback。</p>
+          </li>
+          <li>
+            <p><span class="do">按键：</span>在 NARRATIVE 右侧点击 <span class="ui">Edit</span>。</p>
+            <p>删除或替换过度确定的句子 <code>This may constitute layering.</code>。建议把整段替换为：</p>
+            <pre>ACME Trading Ltd (CUS-000001) shows unusual payment activity in the review window with a priority score of 83 (RED). Inbound funds were followed by rapid outbound transfers across multiple counterparties. The observed pattern requires further investigation and a documented commercial explanation. Investigators should corroborate commercial purpose before any escalation decision.</pre>
+          </li>
+          <li>
+            <p><span class="do">按键：</span>点击 <span class="ui">Done</span>，再点击 <span class="ui">Accept</span>。</p>
+            <p><span class="see">应看到：</span><strong>Edited and accepted by sarah.chen</strong>，Accept 按钮变为不可用，Audit trail 新增 <strong>AI_DRAFT_EDITED_AND_ACCEPTED</strong>。</p>
+          </li>
+        </ol>
+        <div class="quote">
+          AI 帮 Sarah 整理证据，但不替她做判断。Sarah 可以修改草稿，最终决定、理由和审计轨迹都由她负责。
+        </div>
+
+        <h3>3D. 内部升级</h3>
+        <ol class="steps">
+          <li>
+            <p><span class="do">按键：</span>在 Decision 中选择 <span class="ui">Escalated – Internal</span>。</p>
+          </li>
+          <li>
+            <p><span class="do">输入理由：</span></p>
+            <pre>Unusual rapid dispersal across five counterparties, including four new counterparties and one higher-risk-jurisdiction payment, requires internal escalation and CRR review.</pre>
+          </li>
+          <li>
+            <p><span class="do">按键：</span>点击 <span class="ui">Submit disposition</span>。</p>
+            <p><span class="see">应看到：</span>页面重新加载后：</p>
+            <ul>
+              <li>Case Status = <strong>ESCALATED_INTERNAL</strong></li>
+              <li>CRR review = <strong>Required</strong></li>
+              <li>Customer Monitoring = <strong>PENDING_REVIEW</strong></li>
+              <li>Audit trail 包含 CASE_ESCALATED、CUSTOMER_MONITORING_FLAGGED、CRR_REVIEW_CREATED</li>
+            </ul>
+          </li>
+        </ol>
+        <div class="callout good">
+          <span class="tag">教学重点</span>
+          <p>升级只创建 CRR review 并设置临时监控状态；它不会自动修改客户 CRR。正式风险评级仍需要授权复核人完成。</p>
+        </div>
+      </section>
+
+      <section id="act4">
+        <span class="section-kicker">06 · Act 4</span>
+        <h2>第四幕：制裁付款作为最终对照</h2>
+        <h3>4A. 提交 Payment B</h3>
+        <ol class="steps">
+          <li>
+            <p><span class="do">返回：</span>按浏览器 Back 回到 Live Demo；如没有回到 Step 4，直接打开 <a href="http://localhost:8080/demo.html">demo.html</a>。</p>
+          </li>
+          <li>
+            <p><span class="do">按键：</span>点击 <span class="ui">Submit Payment B</span>。</p>
+            <p><span class="see">应看到：</span>Payment B 卡片显示：</p>
+            <ul>
+              <li>Payment reference = <strong>PAY-000002</strong></li>
+              <li>Status = <strong>HELD — not executed</strong></li>
+              <li>Name similarity = <strong>0.972</strong></li>
+              <li>Date of birth = <strong>EXACT</strong></li>
+              <li>Nationality = <strong>EXACT</strong></li>
+            </ul>
+          </li>
+        </ol>
+        <div class="quote">
+          现在换一个收款人 Vladmir Petrov。系统发现姓名与制裁名单高度相似，同时生日和国籍一致，因此付款被暂挂；它还没有执行，executed_at 仍为空。
+        </div>
+        <div class="callout warn">
+          <span class="tag">相似度口径</span>
+          <p>0.972 是字符串相似度，不是“97.2% 概率为同一个人”。身份判断仍由复核人员结合属性证据完成。</p>
+        </div>
+
+        <h3>4B. 制裁复核并确认 Target match</h3>
+        <ol class="steps">
+          <li>
+            <p><span class="do">按键：</span>点击顶部 <span class="ui">Sanctions Review</span>。</p>
+            <p><span class="see">应看到：</span>列表中唯一一条 Vladmir Petrov，Similarity 0.972，Status 为 Potential match。</p>
+          </li>
+          <li>
+            <p><span class="do">按键：</span>点击该行 <span class="ui">Review</span>。</p>
+            <p><span class="see">应看到：</span>输入姓名 Vladmir Petrov 与名单姓名 Vladimir Petrov；DOB 1971-03-02 EXACT；nationality RU EXACT；Listed measures 包含 asset_freeze。</p>
+          </li>
+          <li>
+            <p><span class="do">按键：</span>Outcome 选择 <span class="ui">Target match</span>。</p>
+          </li>
+          <li>
+            <p><span class="do">输入理由：</span></p>
+            <pre>Name is a high-similarity match and both date of birth and nationality match the listed individual exactly.</pre>
+          </li>
+          <li>
+            <p><span class="do">按键：</span>点击 <span class="ui">Resolve</span>。</p>
+            <p><span class="see">应看到：</span>详情收起，列表显示 <strong>No open potential matches</strong>。付款保持不执行，后台状态更新为 RESTRICTED_TARGET_MATCH。</p>
+          </li>
+        </ol>
+        <div class="quote">
+          前一条路径发现的是行为异常，所以系统交给调查员一份可解释的案件；这一条路径发现的是潜在制裁名单匹配，所以付款先不执行。一个保护支付入口，一个监控客户行为。
+        </div>
+      </section>
+
+      <section id="language">
+        <span class="section-kicker">07 · Language discipline</span>
+        <h2>合规用词：推荐说法与禁用说法</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>场景</th><th>推荐说法</th><th>不要说</th></tr></thead>
+            <tbody>
+              <tr><td>付款 A 释放</td><td>没有发现潜在制裁名单匹配</td><td>这笔付款是安全的</td></tr>
+              <tr><td>夜间监控</td><td>发现需要解释的异常活动</td><td>系统发现了洗钱</td></tr>
+              <tr><td>优先级分数</td><td>分数决定先看谁</td><td>83 分说明客户有罪</td></tr>
+              <tr><td>AI 草稿</td><td>AI 整理证据，Sarah 负责判断</td><td>AI 决定升级案件</td></tr>
+              <tr><td>姓名相似度</td><td>0–1 的字符串相似度</td><td>97.2% 概率是同一个人</td></tr>
+              <tr><td>Target match</td><td>属性证据支持确认目标匹配</td><td>系统自动认定违法</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="recovery">
+        <span class="section-kicker">08 · Recovery</span>
+        <h2>现场故障恢复</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>现象</th><th>处理</th></tr></thead>
+            <tbody>
+              <tr><td>页面不是 Step 1</td><td>点击 <span class="ui">Reset demo</span>，等待重新播种完成。</td></tr>
+              <tr><td>按钮显示 Working…</td><td>等待下一步按钮出现，不要刷新或双击。</td></tr>
+              <tr><td>页面提示状态冲突</td><td>点击页面中的 Refresh state；仍不一致则 Reset demo。</td></tr>
+              <tr><td>AI 显示 model=template</td><td>正常。离线 fallback 是确定性演示路径，不影响 AI 编辑和审计。</td></tr>
+              <tr><td>Accept 不可点击</td><td>先 Generate draft；编辑后点 Done，再点 Accept。</td></tr>
+              <tr><td>Disposition 提交失败</td><td>检查 Rationale 是否为空。</td></tr>
+              <tr><td>Sanctions Resolve 失败</td><td>检查 Resolution rationale 是否为空。</td></tr>
+              <tr><td>Resolve 后列表为空</td><td>正常；已解决的 hit 不再出现在 Potential match 队列。</td></tr>
+              <tr><td>无法访问 localhost:8080</td><td>运行 <code>docker compose ps</code>；必要时重新运行 <code>docker compose up -d --build</code>。</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout red">
+          <span class="tag">最后手段</span>
+          <p>任何业务状态无法判断时，直接 Reset demo，从 Step 1 重新开始。Reset 会重建全部演示数据，因此不要在正式演示过程中误点。</p>
+        </div>
+      </section>
+
+      <section id="quickrun">
+        <span class="section-kicker">09 · Quick run</span>
+        <h2>一页速查：完整按键顺序</h2>
+        <ol class="steps">
+          <li><p><span class="ui">Reset demo</span> → 确认 Step 1。</p></li>
+          <li><p><span class="ui">Create Payment A</span> → RELEASED / 16:52 / No potential match。</p></li>
+          <li><p><span class="ui">Complete day activity</span> → 8 / 55min / £84,200 / 92% / 4 new。</p></li>
+          <li><p><span class="ui">Run overnight monitoring</span> → 1 new case / RED 83 / 02:00。</p></li>
+          <li><p><span class="ui">Open the case Sarah is investigating</span>。</p></li>
+          <li><p>展开 R1–R4 → 查看八笔交易时间线。</p></li>
+          <li><p><span class="ui">Generate draft</span> → <span class="ui">Edit</span> → 修改措辞 → <span class="ui">Done</span> → <span class="ui">Accept</span>。</p></li>
+          <li><p>Decision 选择 <span class="ui">Escalated – Internal</span> → 填理由 → <span class="ui">Submit disposition</span>。</p></li>
+          <li><p>返回 demo.html → <span class="ui">Submit Payment B</span> → HELD / 0.972 / DOB EXACT / Nationality EXACT。</p></li>
+          <li><p><span class="ui">Sanctions Review</span> → <span class="ui">Review</span> → <span class="ui">Target match</span> → 填理由 → <span class="ui">Resolve</span>。</p></li>
+        </ol>
+        <div class="callout good no-break">
+          <span class="tag">最终检查</span>
+          <p>组员能够解释清楚以下三句话，就算真正理解了演示：</p>
+          <ol>
+            <li>RELEASED 只表示没有潜在名单匹配，不表示没有其他风险。</li>
+            <li>RED 83 是案件优先级，不是有罪概率。</li>
+            <li>AI 帮助整理证据，最终判断和审计责任属于 Sarah。</li>
+          </ol>
+        </div>
+      </section>
+
+      <p class="footer-note">AML Alert Triage · Internal learning material · Updated 28 Jul 2026</p>
+    </main>
+  </div>
+</body>
+</html>

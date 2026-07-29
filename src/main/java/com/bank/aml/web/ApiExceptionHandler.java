@@ -1,5 +1,7 @@
 package com.bank.aml.web;
 
+import com.bank.aml.service.demo.DemoScenarioConflictException;
+import com.bank.aml.service.demo.DemoScenarioNotReadyException;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +24,17 @@ public class ApiExceptionHandler {
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<Map<String, String>> status(ResponseStatusException ex) {
         return ResponseEntity.status(ex.getStatusCode()).body(Map.of("error", ex.getReason() == null ? "error" : ex.getReason()));
+    }
+
+    @ExceptionHandler(DemoScenarioConflictException.class)
+    public ResponseEntity<Map<String, Object>> scenarioConflict(DemoScenarioConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("error", ex.getMessage(), "currentStep", ex.getCurrentStep()));
+    }
+
+    @ExceptionHandler(DemoScenarioNotReadyException.class)
+    public ResponseEntity<Map<String, String>> scenarioNotReady(DemoScenarioNotReadyException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

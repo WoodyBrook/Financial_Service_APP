@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "aml-demo",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "export JAVA_HOME=$(/usr/libexec/java_home -v 17) && exec ./mvnw spring-boot:run -Dspring-boot.run.profiles=demo"],
+      "port": 8080
+    }
+  ]
+}

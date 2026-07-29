@@ -1,0 +1,6 @@
+# Demo profile: no background monitoring run may race the presenter. The scenario API
+# triggers the sweep explicitly at the scripted moment; the cron is disabled ("-" is
+# Spring's documented way to turn a @Scheduled cron off).
+aml:
+  monitoring:
+    cron: "-"

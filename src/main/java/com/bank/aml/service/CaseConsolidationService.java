@@ -96,7 +96,7 @@ public class CaseConsolidationService {
         caseEntity = caseRepository.save(caseEntity);
 
         if (created) {
-            auditService.record("CASE_OPENED", "CASE", caseEntity.getId(),
+            auditService.recordAt(asOf, "CASE_OPENED", "CASE", caseEntity.getId(),
                     Map.of("caseRef", caseEntity.getCaseRef(), "priorityScore", score, "band", caseEntity.getPriorityBand()));
         }
         return Optional.of(caseEntity);

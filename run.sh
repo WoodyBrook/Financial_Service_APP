@@ -21,9 +21,9 @@ elif docker ps -a --format '{{.Names}}' | grep -qx 'aml-postgres'; then
     echo "Postgres: removing stopped unmanaged container so Compose can own it"
     docker rm -f aml-postgres >/dev/null
   fi
-  docker compose up -d
+  docker compose up -d postgres
 else
-  docker compose up -d
+  docker compose up -d postgres
 fi
 
 until docker exec aml-postgres pg_isready -U aml -d aml >/dev/null 2>&1; do
@@ -32,4 +32,4 @@ done
 echo "Postgres: ready"
 
 # The demo profile is what exposes POST /api/demo/reset.
-exec mvn spring-boot:run -Dspring-boot.run.profiles=demo
+exec ./mvnw spring-boot:run -Dspring-boot.run.profiles=demo

@@ -67,4 +67,14 @@ public class CaseEntity {
 
     @Column(name = "opened_at", nullable = false)
     private Instant openedAt;
+
+    /**
+     * Not a mapped column: every case today is opened by a monitoring run, and the audit
+     * trail records it as such. Exposed read-only so detail pages can state the provenance
+     * without a schema change.
+     */
+    @com.fasterxml.jackson.annotation.JsonProperty("openedBy")
+    public String getOpenedBy() {
+        return "monitoring run";
+    }
 }

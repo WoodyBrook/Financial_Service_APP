@@ -144,6 +144,9 @@ textarea { min-height: 110px; resize: vertical; }
 .compare td.match-EXACT { color: var(--green); font-weight: 600; }
 .compare td.match-MISMATCH, .compare td.match-PARTIAL { color: var(--amber); }
 .compare td.match-NOT_PROVIDED { color: var(--muted); }
+/* The payment that opened the investigation, highlighted in the case timeline. */
+tr.focus-txn { background: #fff6e8; }
+tr.focus-txn td { border-bottom: 1px solid #f0d9b5; }
 /* ---- Score breakdown key-value ---- */
 .evidence-kv {
   margin: 0.6rem 0 0.2rem;

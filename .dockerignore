@@ -1,0 +1,11 @@
+target/
+.git/
+.idea/
+.claude/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+docs/
+project_description.pdf

@@ -17,8 +17,31 @@ so on a machine whose default JDK is 23 a plain `mvn compile` fails with a wall 
 Open:
 
 - UI: http://localhost:8080
+- Live demo console: http://localhost:8080/demo.html
 - Swagger: http://localhost:8080/swagger-ui.html
 - Bonus screen API: `POST /api/screen`
+
+## Live demo scenario
+
+`/demo.html` drives the scripted two-payment story through a server-side state machine
+(`READY → PAYMENT_A_RELEASED → ACTIVITY_READY → CASE_RAISED → PAYMENT_B_HELD`):
+
+```bash
+curl -X POST http://localhost:8080/api/demo/reset            # full truncate + reseed + READY
+curl    -s http://localhost:8080/api/demo/scenario           # current state (refresh recovery)
+curl -X POST http://localhost:8080/api/demo/scenario/payment-a
+curl -X POST http://localhost:8080/api/demo/scenario/activity
+curl -X POST http://localhost:8080/api/demo/scenario/run-monitoring
+curl -X POST http://localhost:8080/api/demo/scenario/payment-b
+```
+
+The scenario endpoints exist only under the `demo` profile. Every step is idempotent —
+repeating a completed step returns the recorded result; an out-of-order step answers
+`409` with the server's current step. Business times (Payment A "yesterday 16:52", the
+monitoring run "today 02:00") are injected through `PaymentExecutionContext` /
+`recordAt(...)`, never patched after the fact; Sarah's on-stage actions keep live wall-clock
+timestamps. Payment references come from the `payment_ref_seq` sequence, and the demo
+profile sets `aml.monitoring.cron: "-"` so no background sweep can race the presenter.
 
 ## Resetting between demo runs
 
@@ -26,7 +49,8 @@ Open:
 curl -X POST http://localhost:8080/api/demo/reset
 ```
 
-Truncates and re-seeds in one transaction. Required before re-running the sanctions
+Truncates and re-seeds in one transaction, resets the payment reference sequence and
+re-inserts the READY scenario row. Required before re-running the scenario or the sanctions
 list-update flow, which is only meaningful against a list that has not been synced yet.
 
 ## Optional LLM

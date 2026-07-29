@@ -112,6 +112,18 @@ public class CaseService {
         audits.sort(Comparator.comparing(AuditEventEntity::getOccurredAt, Comparator.nullsLast(Comparator.reverseOrder())));
         auditService.record("CASE_VIEWED", "CASE", id, Map.of("caseRef", c.getCaseRef()));
 
+        String focusTxnRef = null;
+        for (AlertEntity alert : alerts) {
+            if (!"R4".equals(alert.getRuleCode())) continue;
+            com.fasterxml.jackson.databind.JsonNode ids = alert.getEvidenceSnapshot().path("transactionIds");
+            if (!ids.isArray() || ids.isEmpty()) continue;
+            TransactionEntity focus = transactionRepository.findById(ids.get(0).asLong()).orElse(null);
+            if (focus != null) {
+                focusTxnRef = focus.getTxnRef();
+                break;
+            }
+        }
+
         Map<String, Object> customerMap = new HashMap<>();
         customerMap.put("id", customer.getId());
         customerMap.put("customerRef", customer.getCustomerRef());
@@ -125,7 +137,7 @@ public class CaseService {
         customerMap.put("crr", customer.getCrr());
         customerMap.put("monitoringStatus", customer.getMonitoringStatus());
 
-        return new CaseDetailDto(c, customerMap, alerts, timeline, draft, audits);
+        return new CaseDetailDto(c, customerMap, alerts, timeline, draft, audits, focusTxnRef);
     }
 
     @Transactional

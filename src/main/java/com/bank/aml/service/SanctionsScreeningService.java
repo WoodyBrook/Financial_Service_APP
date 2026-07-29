@@ -11,6 +11,7 @@ import com.bank.aml.repo.SanctionsHitRepository;
 import com.bank.aml.repo.TransactionRepository;
 import com.bank.aml.util.JaroWinkler;
 import com.bank.aml.util.Jsons;
+import jakarta.persistence.EntityManager;
 import com.bank.aml.web.dto.PaymentRequest;
 import com.bank.aml.web.dto.PaymentResponse;
 import com.bank.aml.web.dto.ResolveHitRequest;
@@ -23,6 +24,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -53,6 +55,8 @@ public class SanctionsScreeningService {
     private final FxRateService fxRateService;
     private final AuditService auditService;
     private final AppProperties appProperties;
+    private final Clock clock;
+    private final jakarta.persistence.EntityManager entityManager;
 
     @Transactional
     public int importList(String resourceLocation, String batchId) {
@@ -160,10 +164,20 @@ public class SanctionsScreeningService {
 
     @Transactional
     public PaymentResponse screenPayment(PaymentRequest req) {
+        return screenPayment(req, PaymentExecutionContext.live(clock));
+    }
+
+    /**
+     * Full screening path with an explicit execution context. FX date, createdAt, executedAt
+     * and the payment audit events all derive from the same context, so a simulated payment
+     * never needs a post-hoc UPDATE of its timestamps.
+     */
+    @Transactional
+    public PaymentResponse screenPayment(PaymentRequest req, PaymentExecutionContext ctx) {
         CustomerEntity customer = customerRepository.findByCustomerRef(req.customerRef())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
-        LocalDate tradeDate = LocalDate.now();
+        LocalDate tradeDate = ctx.fxRateDate();
         BigDecimal gbp = fxRateService.toGbp(req.currency(), tradeDate, req.amount());
 
         TransactionEntity txn = new TransactionEntity();
@@ -179,12 +193,12 @@ public class SanctionsScreeningService {
         txn.setCounterpartyName(req.beneficiaryName());
         txn.setCounterpartyRef("BEN-" + Math.abs(req.beneficiaryName().hashCode()));
         txn.setCounterpartyCountry(req.beneficiaryCountry().toUpperCase());
-        txn.setCreatedAt(Instant.now());
+        txn.setCreatedAt(ctx.occurredAt());
         // executedAt stays null until screening clears the payment.
         txn.setStatus("SCREENING");
         txn = transactionRepository.save(txn);
 
-        auditService.record("PAYMENT_SCREENED", "CUSTOMER", customer.getId(),
+        auditService.recordAt(ctx.occurredAt(), "PAYMENT_SCREENED", "CUSTOMER", customer.getId(),
                 Map.of("txnId", txn.getId(), "txnRef", txn.getTxnRef(), "beneficiary", req.beneficiaryName()));
 
         Optional<MatchResult> match = bestMatch(
@@ -192,11 +206,13 @@ public class SanctionsScreeningService {
                 req.beneficiaryCountry(), "INDIVIDUAL");
         if (match.isEmpty()) {
             txn.setStatus("RELEASED");
-            txn.setExecutedAt(Instant.now());
+            txn.setExecutedAt(ctx.occurredAt());
             transactionRepository.save(txn);
-            auditService.record("PAYMENT_RELEASED", "CUSTOMER", customer.getId(),
+            auditService.recordAt(ctx.occurredAt(), "PAYMENT_RELEASED", "CUSTOMER", customer.getId(),
                     Map.of("txnId", txn.getId(), "txnRef", txn.getTxnRef(), "reason", "No potential sanctions match"));
-            return new PaymentResponse("RELEASED", null, txn.getId(), "No potential sanctions match");
+            return new PaymentResponse(
+                    "RELEASED", null, txn.getId(), "No potential sanctions match",
+                    txn.getTxnRef(), txn.getExecutedAt(), "NO_POTENTIAL_MATCH", null, null, null);
         }
 
         MatchResult m = match.get();
@@ -204,13 +220,26 @@ public class SanctionsScreeningService {
         transactionRepository.save(txn);
         SanctionsHitEntity hit = persistHit(
                 "PAYMENT_SCREENING", txn.getId(), customer.getId(), req.beneficiaryName(), m);
-        auditService.record("PAYMENT_HELD", "SANCTIONS_HIT", hit.getId(),
+        auditService.recordAt(ctx.occurredAt(), "PAYMENT_HELD", "SANCTIONS_HIT", hit.getId(),
                 Map.of("txnId", txn.getId(), "txnRef", txn.getTxnRef(), "similarity", m.similarity()));
-        return new PaymentResponse("HELD", hit.getId(), txn.getId(), "Payment held pending review");
+        JsonNode details = m.details();
+        return new PaymentResponse(
+                "HELD", hit.getId(), txn.getId(), "Payment held pending review",
+                txn.getTxnRef(), null, "POTENTIAL_MATCH",
+                BigDecimal.valueOf(m.similarity()).setScale(3, RoundingMode.HALF_UP),
+                details.path("dateOfBirth").path("match").asText(null),
+                details.path("nationality").path("match").asText(null));
     }
 
+    /**
+     * Payment references come from a database sequence, not from count()+1: under concurrent
+     * submissions a row count hands the same reference to both callers.
+     */
     private String nextPaymentRef() {
-        return String.format("PAY-%06d", transactionRepository.count() + 1);
+        Long next = (Long) entityManager
+                .createNativeQuery("SELECT nextval('payment_ref_seq')")
+                .getSingleResult();
+        return String.format("PAY-%06d", next);
     }
 
     private SanctionsHitEntity persistHit(

@@ -319,6 +319,7 @@
       const d = await api('/api/cases/' + id);
       const c = d.caseRecord;
       const cust = d.customer;
+      const focusTxnRef = d.focusTxnRef || null;
       const mon = cust.monitoringStatus === 'PENDING_REVIEW'
         ? `<span class="badge warn">${cust.monitoringStatus}</span>`
         : `<span class="badge">${cust.monitoringStatus}</span>`;
@@ -333,6 +334,7 @@
               <div>Window</div><div>${fmtTs(c.windowStart)} → ${fmtTs(c.windowEnd)}</div>
               <div>Prior closed (90d)</div><div>${c.priorRecentCases}</div>
               <div>CRR review</div><div>${c.crrReviewRequired ? 'Required' : 'No'}</div>
+              <div>Opened</div><div>${esc(c.openedBy || 'Monitoring run')}${c.openedAt ? ' · ' + fmtTs(c.openedAt) : ''}</div>
             </div>
           </section>
           <section class="panel">
@@ -359,17 +361,19 @@
 
         <section class="panel">
           <h2>Transaction timeline</h2>
+          ${focusTxnRef ? `<p class="muted">The payment that opened this investigation is highlighted: <span class="mono"><strong>${esc(focusTxnRef)}</strong></span></p>` : ''}
           <table>
-            <thead><tr><th>When</th><th>Ref</th><th>Dir</th><th>GBP</th><th>Counterparty</th><th>Country</th></tr></thead>
+            <thead><tr><th>When</th><th>Ref</th><th>Dir</th><th>GBP</th><th>Counterparty</th><th>Country</th><th>Status</th></tr></thead>
             <tbody>
               ${(d.timeline || []).map(t => `
-                <tr data-txn-ref="${esc(t.txnRef)}">
+                <tr data-txn-ref="${esc(t.txnRef)}"${t.txnRef === focusTxnRef ? ' class="focus-txn"' : ''}>
                   <td>${fmtTs(t.executedAt)}</td>
-                  <td class="mono">${esc(t.txnRef)}</td>
+                  <td class="mono">${esc(t.txnRef)}${t.txnRef === focusTxnRef ? ' <span class="badge">focus</span>' : ''}</td>
                   <td>${esc(t.direction)}</td>
                   <td>${fmtMoney(t.amountGbp)}</td>
                   <td>${esc(t.counterpartyName || '')}</td>
                   <td>${esc(t.counterpartyCountry || '')}</td>
+                  <td>${esc(t.status || '')}</td>
                 </tr>`).join('')}
             </tbody>
           </table>
@@ -421,6 +425,11 @@
         </section>`;
 
       buildEvidenceIndex();
+
+      if (c.status !== 'OPEN') {
+        const sel = document.getElementById('decision');
+        if (sel) sel.value = c.status;
+      }
 
       if (d.aiDraft) {
         currentDraft = d.aiDraft;

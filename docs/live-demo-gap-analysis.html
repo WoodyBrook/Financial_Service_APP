@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AML 双通道现场演示：详细实施规格</title>
+  <style>
+    :root {
+      --paper: #f4f6f9;
+      --card: #ffffff;
+      --ink: #172331;
+      --body: #35475a;
+      --muted: #6c7e91;
+      --line: #dce3eb;
+      --navy: #102b46;
+      --navy-2: #204d73;
+      --red: #b00020;
+      --red-soft: #fbeaec;
+      --amber: #9a5b00;
+      --amber-soft: #fff3df;
+      --green: #27734b;
+      --green-soft: #e8f4ed;
+      --blue-soft: #e9f1f8;
+      --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+              "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--body);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.72;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--navy-2); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    code, pre { font-family: var(--mono); }
+    code { background: #edf1f5; color: var(--ink); border-radius: 3px; padding: 0.08em 0.34em; }
+    pre {
+      margin: 0.75rem 0 0;
+      padding: 0.9rem 1rem;
+      overflow: auto;
+      color: #dbe9f5;
+      background: #0d263e;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      line-height: 1.55;
+    }
+    h1, h2, h3 { color: var(--ink); line-height: 1.28; }
+    h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.25rem); letter-spacing: -0.035em; }
+    h2 { margin: 0; font-size: 1.45rem; }
+    h3 { margin: 0 0 0.55rem; font-size: 1rem; }
+    p { margin: 0 0 0.9rem; }
+    ul, ol { margin: 0.65rem 0 0; padding-left: 1.25rem; }
+    li { margin: 0.28rem 0; }
+    strong { color: var(--ink); }
+
+    .hero {
+      color: #fff;
+      background:
+        radial-gradient(circle at 83% 20%, rgba(255,255,255,0.12), transparent 28%),
+        linear-gradient(135deg, #0b2238 0%, #153c5e 72%, #7b0010 140%);
+      padding: 4.3rem 1.5rem 4rem;
+    }
+    .hero-inner, .page { max-width: 1120px; margin: 0 auto; }
+    .eyebrow {
+      margin: 0 0 0.75rem;
+      color: #ffb9c0;
+      font: 700 0.72rem/1 var(--mono);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .hero h1 { color: #fff; max-width: 17em; }
+    .hero .lede { max-width: 52em; margin: 1.1rem 0 0; color: #d7e4ef; font-size: 1.08rem; }
+    .meta { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.5rem; }
+    .meta span {
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.07);
+      border-radius: 999px;
+      padding: 0.26rem 0.65rem;
+      color: #edf5fb;
+      font-size: 0.78rem;
+    }
+
+    .page { padding: 2.5rem 1.5rem 6rem; }
+    .toc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-bottom: 2.7rem;
+    }
+    .toc a {
+      text-decoration: none;
+      color: var(--navy);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.38rem 0.72rem;
+      font-size: 0.82rem;
+    }
+    .section { margin: 0 0 3.6rem; scroll-margin-top: 1rem; }
+    .section-head {
+      display: flex;
+      gap: 0.8rem;
+      align-items: baseline;
+      padding-bottom: 0.65rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 2px solid var(--navy-2);
+    }
+    .num { color: var(--navy-2); font: 700 0.78rem/1 var(--mono); letter-spacing: 0.09em; }
+
+    .summary-grid, .grid-2, .grid-3 { display: grid; gap: 1rem; }
+    .summary-grid { grid-template-columns: 1.15fr 0.85fr; }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 1.15rem 1.25rem;
+      box-shadow: 0 1px 2px rgba(15, 35, 53, 0.035);
+    }
+    .callout { border-left: 4px solid var(--navy-2); }
+    .callout.warn { border-left-color: var(--amber); background: var(--amber-soft); }
+    .callout.good { border-left-color: var(--green); background: var(--green-soft); }
+    .callout.danger { border-left-color: var(--red); background: var(--red-soft); }
+    .kicker { color: var(--muted); font: 700 0.68rem/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; }
+    .big { margin-top: 0.45rem; color: var(--ink); font-size: 1.35rem; font-weight: 720; line-height: 1.35; }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 1rem;
+    }
+    .flow-step {
+      position: relative;
+      min-height: 150px;
+      padding: 1rem;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-top: 4px solid var(--navy-2);
+      border-radius: 7px;
+    }
+    .flow-step::after {
+      content: "→";
+      position: absolute;
+      top: 46%;
+      right: -0.75rem;
+      z-index: 2;
+      width: 1rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .flow-step:last-child::after { display: none; }
+    .flow-step.red { border-top-color: var(--red); }
+    .flow-step.green { border-top-color: var(--green); }
+    .flow-step.amber { border-top-color: var(--amber); }
+    .flow-step .step-no { color: var(--muted); font: 700 0.69rem/1 var(--mono); }
+    .flow-step h3 { margin-top: 0.55rem; }
+    .flow-step p { margin: 0; color: var(--muted); font-size: 0.86rem; line-height: 1.55; }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      border-radius: 999px;
+      padding: 0.18rem 0.48rem;
+      white-space: nowrap;
+      font: 700 0.68rem/1.3 var(--mono);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .status.ready { color: var(--green); background: var(--green-soft); }
+    .status.partial { color: var(--amber); background: var(--amber-soft); }
+    .status.gap { color: var(--red); background: var(--red-soft); }
+    .priority {
+      display: inline-block;
+      min-width: 2.25rem;
+      text-align: center;
+      padding: 0.16rem 0.42rem;
+      color: #fff;
+      background: var(--navy-2);
+      border-radius: 3px;
+      font: 700 0.7rem/1.3 var(--mono);
+    }
+    .priority.p0 { background: var(--red); }
+    .priority.p1 { background: var(--amber); }
+
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+    th, td { padding: 0.72rem 0.75rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); background: #f7f9fb; font: 700 0.7rem/1.4 var(--mono); letter-spacing: 0.055em; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+    td:first-child { color: var(--ink); font-weight: 620; }
+
+    .api { border-left: 4px solid var(--navy-2); }
+    .api-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; }
+    .method { color: #fff; background: var(--navy-2); border-radius: 3px; padding: 0.17rem 0.42rem; font: 700 0.7rem/1.3 var(--mono); }
+    .endpoint { color: var(--ink); font: 700 0.86rem/1.4 var(--mono); overflow-wrap: anywhere; }
+    .api p { margin-bottom: 0.5rem; }
+
+    .state-machine { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; margin: 1rem 0; }
+    .state-machine span {
+      padding: 0.43rem 0.65rem;
+      color: var(--ink);
+      background: var(--blue-soft);
+      border: 1px solid #cedce8;
+      border-radius: 4px;
+      font: 650 0.76rem/1.3 var(--mono);
+    }
+    .state-machine b { color: var(--muted); }
+
+    .script-line {
+      position: relative;
+      padding: 0.85rem 1rem 0.85rem 3.25rem;
+      margin-bottom: 0.65rem;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+    }
+    .script-line .beat {
+      position: absolute;
+      left: 0.85rem;
+      top: 0.86rem;
+      width: 1.65rem;
+      height: 1.65rem;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: var(--navy-2);
+      border-radius: 50%;
+      font: 700 0.72rem/1 var(--mono);
+    }
+    .quote { color: var(--ink); font-weight: 610; }
+    .screen { color: var(--muted); font-size: 0.87rem; }
+
+    .checklist { list-style: none; padding: 0; }
+    .checklist li { position: relative; padding-left: 1.55rem; margin: 0.5rem 0; }
+    .checklist li::before { content: "□"; position: absolute; left: 0; color: var(--navy-2); font-weight: 700; }
+    .footnote { color: var(--muted); font-size: 0.8rem; }
+    footer { margin-top: 4rem; padding-top: 1.2rem; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.78rem; }
+
+    @media (max-width: 900px) {
+      .summary-grid, .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .flow { grid-template-columns: 1fr; }
+      .flow-step { min-height: auto; }
+      .flow-step::after { content: "↓"; top: auto; bottom: -1.02rem; left: 50%; right: auto; }
+    }
+    @media print {
+      body { background: #fff; font-size: 11pt; }
+      .hero { padding: 2rem 0; background: #102b46 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .page { max-width: none; padding: 1.2rem 0; }
+      .toc { display: none; }
+      .section { break-inside: avoid-page; }
+      .card, .table-wrap, .flow-step { box-shadow: none; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">Financial Services App · Approved Implementation Specification</p>
+      <h1>AML 双通道现场演示<br />详细实施规格</h1>
+      <p class="lede">
+        目标：现场创建两笔企业付款。付款 A 通过制裁筛查并执行，随后作为八笔关联交易之一被全量夜间监控建案并交给 Sarah；付款 B 因潜在制裁名单匹配，在执行前被暂挂。本文档给出可直接实施的状态、时间、API、数据、并发和测试设计。
+      </p>
+      <div class="meta">
+        <span>版本 · v2（审核通过后更新）</span>
+        <span>范围 · Backend / Frontend / DB / Tests / Demo Script</span>
+        <span>原则 · 一次结构性拆分，避免后续返工</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <nav class="toc" aria-label="目录">
+      <a href="#decisions">冻结决策</a>
+      <a href="#target-flow">目标流程</a>
+      <a href="#architecture">架构边界</a>
+      <a href="#state">状态与数据库</a>
+      <a href="#time">时间与审计</a>
+      <a href="#seed">Seed 与场景数据</a>
+      <a href="#backend">API 合同</a>
+      <a href="#frontend">前端方案</a>
+      <a href="#safety">幂等与保护</a>
+      <a href="#delivery">实施顺序</a>
+      <a href="#tests">质量门</a>
+      <a href="#script">演讲顺序</a>
+    </nav>
+
+    <section class="section" id="decisions">
+      <div class="section-head"><span class="num">01</span><h2>已冻结的技术决策</h2></div>
+      <div class="summary-grid">
+        <div class="card callout good">
+          <span class="kicker">Approved direction</span>
+          <div class="big">保留核心业务链；新增独立 Demo Scenario 编排层。</div>
+          <p>Sanctions、R1–R4、Case Consolidation、Sarah 工作台和 AI draft 继续作为唯一业务实现。Demo 层只控制数据准备、虚拟时间、调用顺序、状态恢复和页面导航，不复制规则。</p>
+        </div>
+        <div class="card callout danger">
+          <span class="kicker">Non-negotiable</span>
+          <div class="big">不通过数据库猜测状态，不事后覆写付款时间。</div>
+          <p>场景状态写入专表；付款时间通过显式执行上下文进入业务服务；系统审计事件使用业务时间，人工事件使用真实时间。</p>
+        </div>
+      </div>
+      <div class="table-wrap" style="margin-top:1rem">
+        <table>
+          <thead><tr><th>领域</th><th>最终决定</th><th>原因</th></tr></thead>
+          <tbody>
+            <tr><td>Reset</td><td>全量 TRUNCATE + 选择性确定性 reseed</td><td>宁可接受数秒等待，也不承担残留数据和定向 DELETE 条件漂移。</td></tr>
+            <tr><td>场景状态</td><td>持久化 <code>demo_scenario_state</code>，P0</td><td>支持刷新恢复、锚点识别、幂等、并发与可诊断错误。</td></tr>
+            <tr><td>虚拟时间</td><td>显式 <code>PaymentExecutionContext</code> / 方法重载</td><td>正式 API 不接受任意时间；不使用 ThreadLocal，不在保存后 UPDATE。</td></tr>
+            <tr><td>夜间监控</td><td>继续全量扫描；Demo profile 禁用自动 cron</td><td>保留真实故事，同时消除演示后台任务竞争。</td></tr>
+            <tr><td>付款 A 单独状态</td><td>承认 R4=15、GREEN；完整模式才成为 RED</td><td>NG 在高风险清单中；Guard 只能保护执行顺序，不能改变规则事实。</td></tr>
+            <tr><td>场景定义</td><td>Fixture 只定义数据；预期规则只存在于测试</td><td>避免生产输入同时充当测试预言机。</td></tr>
+            <tr><td>前端</td><td>新增一个 <code>/demo.html</code> Presenter Console</td><td>业务页面不承担演示状态机；现有 Sarah 页面只做局部增强。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section" id="target-flow">
+      <div class="section-head"><span class="num">02</span><h2>目标流程与业务事实</h2></div>
+      <div class="flow" aria-label="目标演示流程图">
+        <div class="flow-step green"><span class="step-no">STEP 01</span><h3>创建付款 A</h3><p>ACME → Sahel Logistics NG，£26,000。制裁筛查无潜在匹配，<code>RELEASED</code>，业务时间为前一天 16:52。</p></div>
+        <div class="flow-step"><span class="step-no">STEP 02</span><h3>补齐当日活动</h3><p>以后端保存的锚点付款为准，创建其余7笔上下文交易，形成16:10–17:05的完整窗口。</p></div>
+        <div class="flow-step amber"><span class="step-no">STEP 03</span><h3>运行全量监控</h3><p>按当天02:00 as-of扫描全部客户；唯一新增案件必须是 ACME，规则输出必须为实际计算结果。</p></div>
+        <div class="flow-step"><span class="step-no">STEP 04</span><h3>Sarah 调查</h3><p>同一 txnRef 出现在案件时间线；Sarah 查看证据、编辑 AI draft、作出内部升级决定。</p></div>
+        <div class="flow-step red"><span class="step-no">STEP 05</span><h3>创建付款 B</h3><p>Vladmir Petrov + DOB + nationality。姓名产生潜在匹配，付款 <code>HELD</code> 且未执行。</p></div>
+      </div>
+      <div class="grid-2" style="margin-top:1rem">
+        <div class="card callout warn">
+          <h3>付款 A 的准确解释</h3>
+          <p>它通过的是<strong>制裁筛查</strong>，不是所有风险判断。若此时单独运行 AML 规则，会因 NG 命中 R4，得到15分 GREEN 信号；夜间完整活动使 R1–R4 同时出现并形成 RED 高优先级案件。</p>
+        </div>
+        <div class="card callout danger">
+          <h3>付款 B 的准确解释</h3>
+          <p>0–1 数值是姓名相似度，不是身份概率。DOB 和 nationality 只增强人工复核证据，不参与当前 similarity 计算。最终画面应是 Potential match / Held / Not executed。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="architecture">
+      <div class="section-head"><span class="num">03</span><h2>架构与职责边界</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>组件</th><th>职责</th><th>不得承担</th></tr></thead>
+          <tbody>
+            <tr><td><code>DemoScenarioController</code></td><td>暴露 demo-only typed API；将 HTTP 错误映射为409/404。</td><td>不创建实体，不判断规则，不推导状态。</td></tr>
+            <tr><td><code>DemoScenarioService</code></td><td>锁状态行、校验步骤、调用业务服务、验证不变量、提交下一状态。</td><td>不复制 sanctions、rule 或 case 逻辑。</td></tr>
+            <tr><td><code>DemoScenarioStateRepository</code></td><td>读取唯一场景状态；提供带锁读取。</td><td>不通过交易数量猜测当前步骤。</td></tr>
+            <tr><td><code>DemoDataSeedService</code></td><td>客户、随机基线、ACME 特殊基线、其他队列案件的确定性创建。</td><td>不推进现场场景。</td></tr>
+            <tr><td><code>AcmeScenarioFixture</code></td><td>纯数据：金额、方向、偏移、对手方、国家、anchor 标识。</td><td>不保存 expected rules、score 或 casesRaised。</td></tr>
+            <tr><td><code>SyntheticTransactionFactory</code></td><td>根据完整 spec 构造一致的 synthetic <code>TransactionEntity</code>。</td><td>不访问 repository，不决定何时创建。</td></tr>
+            <tr><td><code>SanctionsScreeningService</code></td><td>正式付款创建、名单匹配、RELEASED/HELD 状态和 sanctions hit。</td><td>不读取 scenario state。</td></tr>
+            <tr><td><code>MonitoringRunService</code></td><td>按 as-of 全量评估并返回 typed run result。</td><td>不依赖 demo 表；调度开关由 profile 配置。</td></tr>
+            <tr><td><code>CaseConsolidationService</code></td><td>基于规则命中创建/更新案件并产生 CASE_OPENED audit。</td><td>不硬编码 ACME 或演示分数。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card callout" style="margin-top:1rem">
+        <strong>调用方向：</strong><code>DemoScenarioService → 正式业务 Service → Repository</code>。业务 Service 绝不反向依赖 DemoScenarioService，从而保证演示能力不会污染生产规则。
+      </div>
+    </section>
+
+    <section class="section" id="state">
+      <div class="section-head"><span class="num">04</span><h2>数据库状态机与迁移</h2></div>
+      <h3>新增 Flyway migration</h3>
+      <pre>CREATE TABLE demo_scenario_state (
+    scenario_key       VARCHAR(64) PRIMARY KEY,
+    step               VARCHAR(32) NOT NULL,
+    customer_id        BIGINT REFERENCES customer(id),
+    anchor_payment_id  BIGINT REFERENCES txn(id),
+    simulated_as_of    TIMESTAMPTZ,
+    case_id            BIGINT REFERENCES case_record(id),
+    sanctions_hit_id   BIGINT REFERENCES sanctions_hit(id),
+    version            BIGINT NOT NULL DEFAULT 0,
+    updated_at         TIMESTAMPTZ NOT NULL
+);
+
+CREATE SEQUENCE payment_ref_seq START WITH 1;</pre>
+      <p class="footnote">表可以存在于通用 schema，但 controller/service 只在 <code>demo</code> profile 注册。Reset 时必须先清 scenario state，再清它引用的业务表，并重置 payment reference sequence。</p>
+
+      <div class="state-machine" aria-label="场景状态机">
+        <span>READY</span><b>→</b><span>PAYMENT_A_RELEASED</span><b>→</b><span>ACTIVITY_READY</span><b>→</b><span>CASE_RAISED</span><b>→</b><span>PAYMENT_B_HELD</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>当前状态</th><th>允许动作</th><th>成功后</th><th>重复调用</th></tr></thead>
+          <tbody>
+            <tr><td>READY</td><td>Create Payment A</td><td>保存 anchor ID 和 simulatedAsOf</td><td>若已成功则返回已保存 Payment A；不新建第二笔。</td></tr>
+            <tr><td>PAYMENT_A_RELEASED</td><td>Complete Activity</td><td>创建其余7笔，转 ACTIVITY_READY</td><td>返回已有场景汇总；交易数量不增加。</td></tr>
+            <tr><td>ACTIVITY_READY</td><td>Run Monitoring</td><td>保存唯一 ACME case ID</td><td>返回已有案件；不重复运行。</td></tr>
+            <tr><td>CASE_RAISED</td><td>Create Payment B</td><td>保存 sanctions hit ID</td><td>返回已有 HELD 结果。</td></tr>
+            <tr><td>PAYMENT_B_HELD</td><td>Reset</td><td>回到 READY</td><td>GET 始终返回最终结果。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="footnote">每个推进动作在单个事务内通过带锁查询读取状态。合法重试是幂等返回；越级、冲突输入或数据库事实不符合状态时返回 <code>409 Conflict</code>。</p>
+    </section>
+
+    <section class="section" id="time">
+      <div class="section-head"><span class="num">05</span><h2>虚拟业务时间与审计边界</h2></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>固定业务时间</h3>
+          <pre>DEMO_DAY           = LocalDate.now(UTC)
+Activity window    = DEMO_DAY-1 16:10 → 17:05
+Payment A          = DEMO_DAY-1 16:52
+Monitoring as-of   = DEMO_DAY   02:00
+Payment B          = live Clock time</pre>
+          <p>其余7笔并非全部发生在 Payment A 之后；场景动作是在数据库中补齐完整当日上下文。口播使用“补齐当天活动”，不使用“后来又发生七笔”。</p>
+        </div>
+        <div class="card">
+          <h3>显式注入机制</h3>
+          <pre>record PaymentExecutionContext(
+    Instant occurredAt,
+    LocalDate fxRateDate
+) {}
+
+screenPayment(request)
+  → screenPayment(request, liveContext(clock))
+
+demo Payment A
+  → screenPayment(request, virtualContext)</pre>
+          <p>FX date、createdAt、executedAt 和 payment audit 全部来自同一 context；禁止调用正式方法后再 UPDATE 时间。</p>
+        </div>
+      </div>
+
+      <h3 style="margin-top:1.5rem">Audit 时间规则</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>事件</th><th>时间来源</th><th>理由</th></tr></thead>
+          <tbody>
+            <tr><td>PAYMENT_SCREENED / PAYMENT_RELEASED（A）</td><td><code>PaymentExecutionContext.occurredAt</code></td><td>模拟业务系统在前一天执行付款。</td></tr>
+            <tr><td>MONITORING_RUN_COMPLETED</td><td><code>MonitoringRunService.run(asOf)</code> 的 asOf</td><td>与规则窗口和 run result 保持一致。</td></tr>
+            <tr><td>CASE_OPENED</td><td><code>CaseConsolidationService</code> 收到的 asOf</td><td>与 openedAt、alert createdAt 和 SLA 同步。</td></tr>
+            <tr><td>CASE_VIEWED / AI_DRAFT_* / CASE_DISPOSED / CASE_ESCALATED</td><td>注入的 live <code>Clock</code></td><td>这些是 Sarah 在现场真实执行的人工行为。</td></tr>
+            <tr><td>PAYMENT_SCREENED / PAYMENT_HELD（B）</td><td>live <code>Clock</code></td><td>第二笔在演示现场即时提交，且没有 executedAt。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card callout warn" style="margin-top:1rem">
+        <strong>AuditService 改造：</strong>保留 <code>record(...)</code> 作为 live-clock 入口，增加 <code>recordAt(Instant,...)</code>；两个重载最终委托同一个 private persist 方法，避免 Map/JsonNode 两套构建逻辑继续复制。
+      </div>
+    </section>
+
+    <section class="section" id="seed">
+      <div class="section-head"><span class="num">06</span><h2>Seed、Reset 与场景数据</h2></div>
+      <div class="card callout good">
+        <span class="kicker">Reset strategy A</span>
+        <div class="big">全量清理，选择性重建 presentation-ready 状态。</div>
+        <p>保留现有 <code>POST /api/demo/reset</code> 合同。<code>DemoResetService</code> 作为薄事务入口，委托 <code>DemoDataSeedService.resetToPresentationReady()</code>；不新增语义重复的 reset endpoint。</p>
+      </div>
+
+      <div class="grid-3" style="margin-top:1rem">
+        <div class="card">
+          <h3>层 1 · 通用历史</h3>
+          <ul><li>50个客户与 reference data</li><li>每客户随机90天 baseline</li><li>固定 random seed</li><li>其他14个开放案件与一个历史关闭案件</li></ul>
+        </div>
+        <div class="card">
+          <h3>层 2 · ACME baseline supplement</h3>
+          <ul><li>CP-LEGACY-A/B/C</li><li>14、28、42、56、70天前</li><li>5组 × 3 = <strong>15笔</strong></li><li>Reset 后必须存在</li></ul>
+        </div>
+        <div class="card">
+          <h3>层 3 · ACME activity</h3>
+          <ul><li>完整8笔异常活动</li><li>Payment A 是其中一笔</li><li>Activity API 只创建其余7笔</li><li>Reset 后必须不存在</li></ul>
+        </div>
+      </div>
+
+      <h3 style="margin-top:1.5rem">AcmeScenarioFixture 边界</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>可以包含</th><th>禁止包含</th></tr></thead>
+          <tbody>
+            <tr><td>金额、方向、币种、时间偏移、counterparty ref/name/country、anchor 标识</td><td>expectedRules、expectedScore、expectedBand、expectedCasesRaised</td></tr>
+            <tr><td>baseline supplement 与 activity 两组纯数据</td><td>Repository、Service、Audit、状态转换代码</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card callout" style="margin-top:1rem">
+        <strong>命名空间不变量：</strong>测试必须证明 <code>CP-NEW-*</code> 与随机 baseline 的 <code>CP-1000..1079</code> 无交集，并证明 <code>CP-LEGACY-A/B/C</code> 已进入 R3 known set。
+      </div>
+
+      <h3 style="margin-top:1.5rem">SyntheticTransactionFactory</h3>
+      <p>从当前私有 <code>SeedDataRunner.saveTxn()</code> 提取纯构造职责。Factory 接收 caller 已确定的 txnRef、FX snapshot、时间和状态，返回完整 Entity；Seed 与 Scenario 分别负责 repository save。正式付款仍由 SanctionsScreeningService 创建。</p>
+    </section>
+
+    <section class="section" id="backend">
+      <div class="section-head"><span class="num">07</span><h2>后端 API 与响应合同</h2></div>
+      <p>所有场景 endpoint 只在 <code>demo</code> profile 注册。请求体不接受 customer、payment ID、executedAt 或 asOf；这些全部来自服务器状态和 fixture，防止前端篡改场景。</p>
+      <div class="grid-2">
+        <div class="card api">
+          <div class="api-head"><span class="method">GET</span><span class="endpoint">/api/demo/scenario</span><span class="priority p0">P0</span></div>
+          <p>返回完整 server-authoritative state，供刷新恢复和诊断。</p>
+          <pre>{
+  "step": "PAYMENT_A_RELEASED",
+  "customerRef": "CUS-000001",
+  "anchorPayment": {
+    "id": 123,
+    "txnRef": "&lt;server-generated&gt;",
+    "status": "RELEASED",
+    "executedAt": "&lt;virtual-business-time&gt;"
+  },
+  "activity": null,
+  "raisedCase": null,
+  "sanctionsHold": null
+}</pre>
+        </div>
+        <div class="card api">
+          <div class="api-head"><span class="method">POST</span><span class="endpoint">/api/demo/reset</span><span class="priority p0">P0</span></div>
+          <p>保留现有 endpoint。执行 full truncate、选择性 seed、sequence reset，最后插入 READY state。</p>
+          <pre>{
+  "step": "READY",
+  "customerRef": "CUS-000001",
+  "acmeOpenCase": false,
+  "scenarioTransactionCount": 0,
+  "message": "Ready for Payment A"
+}</pre>
+        </div>
+        <div class="card api">
+          <div class="api-head"><span class="method">POST</span><span class="endpoint">/api/demo/scenario/payment-a</span><span class="priority p0">P0</span></div>
+          <p>在 READY 下，以虚拟 PaymentExecutionContext 调用正式 sanctions screening；验证 RELEASED 后保存 anchor。</p>
+          <pre>{
+  "step": "PAYMENT_A_RELEASED",
+  "anchorPayment": {
+    "txnRef": "&lt;server-generated&gt;",
+    "status": "RELEASED",
+    "executedAt": "&lt;DEMO_DAY-1 16:52Z&gt;"
+  },
+  "screeningOutcome": "NO_POTENTIAL_MATCH"
+}</pre>
+        </div>
+        <div class="card api">
+          <div class="api-head"><span class="method">POST</span><span class="endpoint">/api/demo/scenario/activity</span><span class="priority p0">P0</span></div>
+          <p>从 state 读取 anchor，创建其余7笔，计算只读展示指标并推进 ACTIVITY_READY。</p>
+          <pre>{
+  "step": "ACTIVITY_READY",
+  "activity": {
+    "transactionCount": 8,
+    "windowMinutes": 55,
+    "inboundGbp": "&lt;computed&gt;",
+    "outboundGbp": "&lt;computed&gt;",
+    "dispersalRatio": "&lt;computed&gt;",
+    "newCounterpartyCount": "&lt;computed&gt;"
+  },
+  "simulatedAsOf": "&lt;DEMO_DAY 02:00Z&gt;"
+}</pre>
+        </div>
+        <div class="card api">
+          <div class="api-head"><span class="method">POST</span><span class="endpoint">/api/demo/scenario/run-monitoring</span><span class="priority p0">P0</span></div>
+          <p>只允许 ACTIVITY_READY；全量运行后验证 casesRaised=1 且客户为 ACME，再保存 case ID。</p>
+          <pre>{
+  "step": "CASE_RAISED",
+  "monitoring": {
+    "customersEvaluated": "&lt;actual&gt;",
+    "suppressedOpenCase": "&lt;actual&gt;",
+    "casesRaised": 1
+  },
+  "raisedCase": {
+    "id": 16,
+    "caseRef": "&lt;server-generated&gt;",
+    "priorityScore": "&lt;actual&gt;",
+    "priorityBand": "RED",
+    "focusTxnRef": "&lt;anchor-txn-ref&gt;"
+  }
+}</pre>
+        </div>
+        <div class="card api">
+          <div class="api-head"><span class="method">POST</span><span class="endpoint">/api/demo/scenario/payment-b</span><span class="priority p0">P0</span></div>
+          <p>在 CASE_RAISED 下用 live context 提交 Vladmir + DOB + nationality；验证 HELD 和 null executedAt。</p>
+          <pre>{
+  "step": "PAYMENT_B_HELD",
+  "sanctionsHold": {
+    "txnRef": "&lt;server-generated&gt;",
+    "status": "HELD",
+    "executedAt": null,
+    "outcome": "POTENTIAL_MATCH",
+    "nameSimilarity": "&lt;actual&gt;",
+    "dateOfBirthMatch": "EXACT",
+    "nationalityMatch": "EXACT"
+  }
+}</pre>
+        </div>
+      </div>
+
+      <h3 style="margin-top:1.5rem">正式 API 增强</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>接口/类型</th><th>变更</th><th>兼容策略</th></tr></thead>
+          <tbody>
+            <tr><td><code>PaymentResponse</code></td><td>增加 txnRef、executedAt、screeningOutcome、nameSimilarity。</td><td>只新增 JSON 字段；更新 OpenAPI 和 controller contract test。</td></tr>
+            <tr><td><code>MonitoringRunResponse</code></td><td>用 typed DTO 替代 Map，并返回 raisedCases。</td><td>保留现有字段名；新增 raisedCases，不移除旧字段。</td></tr>
+            <tr><td><code>AuditService</code></td><td>增加 <code>recordAt</code>；普通 <code>record</code> 使用注入 Clock。</td><td>现有调用无需全部修改；仅系统模拟路径显式传时间。</td></tr>
+            <tr><td>Payment reference</td><td>用数据库 sequence 替代 <code>transactionRepository.count()+1</code>。</td><td>继续使用 PAY- 前缀；具体编号不得写入讲稿。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section" id="frontend">
+      <div class="section-head"><span class="num">08</span><h2>前端详细方案</h2></div>
+      <div class="card callout good">
+        <span class="kicker">One new surface</span>
+        <div class="big"><code>/demo.html</code> 是状态机的视图，不是状态的来源。</div>
+        <p>每次加载先 GET state；每个动作成功后用服务器返回的完整 state 重绘。前端不计算风险分数、不保存唯一 anchor、不硬编码交易编号和监控指标。</p>
+      </div>
+      <div class="grid-2" style="margin-top:1rem">
+        <div class="card">
+          <h3>Presenter Console</h3>
+          <ul>
+            <li>五步 stepper 和明确的虚拟业务时间轴。</li>
+            <li>当前合法主按钮一个；请求期间立即禁用。</li>
+            <li>Payment A 显示 RELEASED、txnRef、executedAt、No potential match。</li>
+            <li>Activity 显示 API 返回的8笔汇总，不写死金额或比例。</li>
+            <li>Monitoring 显示实际 scan counts 和唯一新案件。</li>
+            <li>Payment B 显示 name similarity、DOB/Nationality EXACT、HELD、Not executed。</li>
+            <li>最终并排显示 Case raised 与 Payment held。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>错误与恢复</h3>
+          <ul>
+            <li>409 显示当前服务器步骤，并提供 Refresh state。</li>
+            <li>场景不变量失败时显示阻断 banner，不继续自动跳转。</li>
+            <li>Reset 显示全量重建 spinner，不假装即时完成。</li>
+            <li>刷新、前进后退、重复点击后页面必须回到服务器事实。</li>
+            <li>不使用 alert()；错误信息保留在页面，便于现场说明。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><code>case.html</code> 增强</h3>
+          <ul>
+            <li>读取 <code>focusTxnRef</code> 并高亮同一付款。</li>
+            <li>时间线增加 Status 列。</li>
+            <li>显示 “Opened by monitoring run” 和 as-of。</li>
+            <li>保留现有 score breakdown、AI、Disposition、Audit。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>现有页面边界</h3>
+          <ul>
+            <li><code>index.html</code> 增加 Live Demo 导航；通用按钮仍保留。</li>
+            <li>场景活跃时通用 Run Monitoring 根据409给出说明。</li>
+            <li><code>sanctions.html</code> 继续提供可选深挖，但 Demo 不自动跳转。</li>
+            <li>现有 index 已提供 DOB 和 nationality，无需重复修复。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="safety">
+      <div class="section-head"><span class="num">09</span><h2>幂等、并发、调度与不变量</h2></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>事务与锁</h3>
+          <ul>
+            <li>状态转换先以 PESSIMISTIC_WRITE 读取唯一行。</li>
+            <li>付款/交易/案件写入与 step 更新在同一外层事务。</li>
+            <li>相同已完成动作返回已有结果；不同意图或越级返回409。</li>
+            <li><code>version</code> 用于检测异常覆盖并支持诊断。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>调度与 Guard</h3>
+          <ul>
+            <li>新增 <code>application-demo.yml</code>，设置 <code>aml.monitoring.cron: "-"</code>。</li>
+            <li>正式 profile 继续使用02:00 cron。</li>
+            <li>场景处于 PAYMENT_A_RELEASED 或 ACTIVITY_READY 时，通用手动 monitoring 返回409。</li>
+            <li>Demo endpoint 直接调用 MonitoringRunService，不经过通用 controller guard。</li>
+          </ul>
+        </div>
+      </div>
+      <h3 style="margin-top:1.5rem">运行后必须验证的不变量</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>动作</th><th>不变量</th><th>失败处理</th></tr></thead>
+          <tbody>
+            <tr><td>Payment A</td><td>RELEASED；executedAt=虚拟时间；无 sanctions hit；state anchor 指向同一 ID。</td><td>事务回滚，保持 READY。</td></tr>
+            <tr><td>Activity</td><td>完整窗口恰有8笔场景活动；anchor 只出现一次；15笔 supplement 未改变。</td><td>事务回滚，保持 PAYMENT_A_RELEASED。</td></tr>
+            <tr><td>Monitoring</td><td>casesRaised=1；唯一 case.customerId=ACME；score=sum(alert points)；band=RED。</td><td>返回 DEMO_SCENARIO_INVARIANT_VIOLATION，不推进状态。</td></tr>
+            <tr><td>Payment B</td><td>HELD；executedAt=null；matched source ID 正确；DOB/Nationality detail=EXACT。</td><td>事务回滚，保持 CASE_RAISED。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card callout warn" style="margin-top:1rem">
+        <strong>R4 保护原因：</strong>Payment A 单独运行规则会产生 R4=15 并足以建立 GREEN case。禁用 demo cron 和保护通用 monitoring 是 P0，不是视觉层优化。
+      </div>
+    </section>
+
+    <section class="section" id="delivery">
+      <div class="section-head"><span class="num">10</span><h2>详细实施顺序与质量门</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>工作包</th><th>具体任务</th><th>主要文件</th><th>进入下一步的条件</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>WP0<br /><span class="priority p0">Characterize</span></td>
+              <td>在任何结构变更前固定当前行为：非 ACME 客户无窗口 hits；Payment A alone 恰好 R4=15；完整现有故事命中 R1–R4；R3 namespace 无碰撞。</td>
+              <td>新增 <code>DemoBaselineCharacterizationTest</code></td>
+              <td>所有断言在当前代码和固定 seed 42 上稳定通过。</td>
+            </tr>
+            <tr>
+              <td>WP1<br /><span class="priority p0">Schema</span></td>
+              <td>增加 scenario state、payment sequence、entity/repository、typed DTO、状态枚举和409异常。</td>
+              <td>新增 Flyway migration、<code>DemoScenarioStateEntity</code>、repository、DTO</td>
+              <td>Repository lock 测试、合法/非法转换单元测试通过。</td>
+            </tr>
+            <tr>
+              <td>WP2<br /><span class="priority p0">Seed</span></td>
+              <td>提取 SyntheticTransactionFactory；拆 SeedDataRunner；实现15笔 supplement；DemoResetService 委托 full reset。</td>
+              <td><code>SeedDataRunner</code>、<code>DemoDataSeedService</code>、<code>AcmeScenarioFixture</code>、factory、reset</td>
+              <td>两次 reset 完全一致；ACME 无 open case/当日活动；其他队列保持稳定。</td>
+            </tr>
+            <tr>
+              <td>WP3<br /><span class="priority p0">Time & Audit</span></td>
+              <td>注入 Clock；增加 PaymentExecutionContext 与内部重载；实现 AuditService.recordAt；Monitoring 和 Case Open 使用 asOf；reference 使用 DB sequence。</td>
+              <td><code>SanctionsScreeningService</code>、<code>AuditService</code>、<code>MonitoringRunService</code>、<code>CaseConsolidationService</code></td>
+              <td>交易、case、alert、系统 audit 时间一致；人工 audit 仍为 live time。</td>
+            </tr>
+            <tr>
+              <td>WP4<br /><span class="priority p0">Scenario API</span></td>
+              <td>实现 GET state、Payment A、Activity、Monitoring、Payment B；所有动作带锁、幂等、验证不变量。</td>
+              <td>新增 <code>DemoScenarioService</code>、controller、exception handler</td>
+              <td>完整 API integration test 一次通过；任一步骤重试不增加业务记录。</td>
+            </tr>
+            <tr>
+              <td>WP5<br /><span class="priority p0">Scheduling</span></td>
+              <td>Demo profile 禁用 cron；通用手动 monitoring 增加场景保护；生产调度回归测试。</td>
+              <td>新增 <code>application-demo.yml</code>、调整 MonitoringController/guard</td>
+              <td>Demo 不会后台建案；正式 profile scheduler 配置仍有效。</td>
+            </tr>
+            <tr>
+              <td>WP6<br /><span class="priority p0">Frontend</span></td>
+              <td>新增 Presenter Console；Case focus/status；导航和错误恢复；Held 结果停留在 Demo 页。</td>
+              <td><code>static/demo.html</code>、<code>case.html</code>、<code>index.html</code>、<code>app.css</code></td>
+              <td>只靠按钮完成全流程；刷新任意步骤可恢复；无手工查找 ID。</td>
+            </tr>
+            <tr>
+              <td>WP7<br /><span class="priority p0">Hardening</span></td>
+              <td>浏览器 E2E、并发测试、连续三次 reset/run、Ollama fallback、OpenAPI/README 更新。</td>
+              <td>tests、README、OpenAPI annotations</td>
+              <td>所有质量门通过，讲稿只读取实际 API 数值。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card callout danger" style="margin-top:1rem">
+        <strong>顺序约束：</strong>前端在 WP4 API 合同稳定后再开始。集成测试不是最终阶段补写，而是每个工作包的完成条件。
+      </div>
+    </section>
+
+    <section class="section" id="tests">
+      <div class="section-head"><span class="num">11</span><h2>测试矩阵与最终验收</h2></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>规则与数据 Characterization</h3>
+          <ul class="checklist">
+            <li>非 ACME、无 open case 客户在模拟窗口无 rule hits。</li>
+            <li>Payment A alone 仅命中 R4，points=15。</li>
+            <li>完整 activity 命中 R1–R4，score 等于 points 之和且 band=RED。</li>
+            <li>ACME supplement 恰有15笔，CP-LEGACY 均为 known。</li>
+            <li>CP-NEW 与随机 baseline ref 无交集。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>状态、幂等与并发</h3>
+          <ul class="checklist">
+            <li>合法状态转换成功；所有越级动作返回409。</li>
+            <li>Payment A、Activity、Monitoring、Payment B 各重复调用不重复写。</li>
+            <li>两个并发 Activity 请求只有一个执行写入。</li>
+            <li>两个并发 Monitoring 请求只创建一个案件。</li>
+            <li>Reset 后旧 anchor/case/hit 不可恢复。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>时间与审计</h3>
+          <ul class="checklist">
+            <li>Payment A executedAt、createdAt、payment audits 使用虚拟时间。</li>
+            <li>Monitoring audit、CASE_OPENED、case.openedAt 使用同一 asOf。</li>
+            <li>CASE_VIEWED、AI 和 disposition 使用 live Clock。</li>
+            <li>Demo profile cron 被禁用；正式 profile cron 未被禁用。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>制裁与页面证据</h3>
+          <ul class="checklist">
+            <li>Vladmir 匹配指定 Vladimir source entry，similarity ≥ threshold。</li>
+            <li>DOB 和 nationality details 均为 EXACT，但不改变 name score。</li>
+            <li>Payment B HELD、executedAt=null，且不进入 AML 时间窗。</li>
+            <li>Case 页面高亮 anchor txnRef；Demo 页面显示同一 txnRef。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card callout good" style="margin-top:1rem">
+        <strong>Golden-path integration：</strong><code>reset → state READY → Payment A RELEASED → Activity 8 txns → full monitoring 1 ACME RED case → same txnRef in evidence/timeline → Sarah actions → Payment B HELD + null executedAt</code>。
+      </div>
+    </section>
+
+    <section class="section" id="script">
+      <div class="section-head"><span class="num">12</span><h2>最终演讲顺序</h2></div>
+      <div class="script-line"><span class="beat">1</span><p class="quote">“我们用两笔付款展示两种不同的控制结果：一种产生调查案件，一种在执行前暂挂付款。”</p><p class="screen">屏幕：Presenter Console，READY。</p></div>
+      <div class="script-line"><span class="beat">2</span><p class="quote">“ACME 向 Sahel Logistics 提交 £26,000。制裁筛查没有发现潜在名单匹配，因此付款被释放并执行。这不代表没有任何其他风险，只代表没有制裁名单命中。”</p><p class="screen">屏幕：显示 API 返回的 RELEASED、txnRef、业务执行时间。</p></div>
+      <div class="script-line"><span class="beat">3</span><p class="quote">“单独看，它最多提供一个较高风险辖区的弱信号。现在补齐当天其余交易，屏幕显示资金在短时间内大量流入并迅速分散给多个收款方。”</p><p class="screen">屏幕：点击 Complete day activity，口播读取实际 transactionCount、inbound、dispersalRatio、newCounterpartyCount。</p></div>
+      <div class="script-line"><span class="beat">4</span><p class="quote">“凌晨2点，监控系统回看过去24小时。现在不是一个孤立信号，而是金额偏离、快速分散、新对手方和较高风险辖区四类证据共同出现。”</p><p class="screen">屏幕：Run overnight monitoring，读取实际 evaluated/suppressed/casesRaised 和 score。</p></div>
+      <div class="script-line"><span class="beat">5</span><p class="quote">“这是刚才相同的交易编号。评分是调查优先级，不是洗钱概率；每一分都能回到具体规则和交易证据。”</p><p class="screen">屏幕：打开唯一 ACME case，自动高亮 anchor；展开 R1–R4。</p></div>
+      <div class="script-line"><span class="beat">6</span><p class="quote">“AI 帮 Sarah 组织可核对的事实，但不改变得分、客户评级或案件状态。Sarah 修改措辞并对最终决定负责。”</p><p class="screen">屏幕：Generate → Edit → Accept → Escalated Internal；显示 PENDING_REVIEW / CRR review。</p></div>
+      <div class="script-line"><span class="beat">7</span><p class="quote">“第二笔付款不同。收款人姓名与名单高度相似，生日和国籍也一致，因此系统在执行前先将付款暂挂，等待人工确认。”</p><p class="screen">屏幕：Payment B 显示 Potential match、实际 similarity、DOB/Nationality EXACT、HELD、Not executed；不继续复核。</p></div>
+      <div class="script-line"><span class="beat">8</span><p class="quote">“第一笔已经执行，随后成为高优先级调查的一部分；第二笔在执行前被暂挂。交易监控判断行为优先级，制裁筛查控制付款入口。”</p><p class="screen">屏幕：Case raised 与 Payment held 两张结果卡并排。</p></div>
+
+      <div class="grid-2" style="margin-top:1rem">
+        <div class="card callout good"><h3>推荐用语</h3><ul><li>“潜在制裁名单匹配”</li><li>“单一弱信号发展为多规则高优先级模式”</li><li>“优先级分数，不是犯罪概率”</li><li>“AI draft，调查员负责最终判断”</li><li>“付款被暂挂，尚未执行”</li></ul></div>
+        <div class="card callout danger"><h3>避免用语</h3><ul><li>“第一笔完全没有任何 AML 风险信号”</li><li>“系统确认这是制裁对象”</li><li>“相似度就是身份概率”</li><li>“系统识别出皮包公司”</li><li>“AI 判定可疑并移交 Sarah”</li></ul></div>
+      </div>
+    </section>
+
+    <footer>
+      本版本已吸收两轮技术审核的结论，作为后续实施的基准规格。示例 JSON 中的 ID、txnRef、分数、相似度、金额汇总和扫描数量仅表示字段形态；实现和演讲必须使用当次 API 返回值。任何改变状态机、虚拟时间、R4 叙事或 Reset 策略的代码变更，都应先更新本规格及对应测试。
+    </footer>
+  </main>
+</body>
+</html>

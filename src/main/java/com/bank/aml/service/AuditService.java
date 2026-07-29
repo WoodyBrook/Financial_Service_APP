@@ -5,6 +5,7 @@ import com.bank.aml.domain.AuditEventEntity;
 import com.bank.aml.repo.AuditEventRepository;
 import com.bank.aml.util.Jsons;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -17,28 +18,40 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuditService {
     private final AuditEventRepository auditEventRepository;
     private final AppProperties appProperties;
+    private final Clock clock;
 
     @Transactional
     public AuditEventEntity record(String action, String entityType, Long entityId, Map<String, ?> details) {
-        AuditEventEntity e = new AuditEventEntity();
-        e.setActor(appProperties.getActor());
-        e.setOccurredAt(Instant.now());
-        e.setAction(action);
-        e.setEntityType(entityType);
-        e.setEntityId(entityId);
-        e.setDetailsJson(details == null ? Jsons.emptyObj() : Jsons.toTree(details));
-        return auditEventRepository.save(e);
+        return persist(clock.instant(), action, entityType, entityId,
+                details == null ? Jsons.emptyObj() : Jsons.toTree(details));
     }
 
     @Transactional
     public AuditEventEntity record(String action, String entityType, Long entityId, JsonNode details) {
+        return persist(clock.instant(), action, entityType, entityId,
+                details == null ? Jsons.emptyObj() : details);
+    }
+
+    /**
+     * System-simulated events (a payment executed "yesterday", a monitoring run "at 02:00")
+     * carry the business time of the event itself, so the audit trail matches what the
+     * business records show.
+     */
+    @Transactional
+    public AuditEventEntity recordAt(Instant occurredAt, String action, String entityType, Long entityId, Map<String, ?> details) {
+        return persist(occurredAt, action, entityType, entityId,
+                details == null ? Jsons.emptyObj() : Jsons.toTree(details));
+    }
+
+    private AuditEventEntity persist(
+            Instant occurredAt, String action, String entityType, Long entityId, JsonNode details) {
         AuditEventEntity e = new AuditEventEntity();
         e.setActor(appProperties.getActor());
-        e.setOccurredAt(Instant.now());
+        e.setOccurredAt(occurredAt);
         e.setAction(action);
         e.setEntityType(entityType);
         e.setEntityId(entityId);
-        e.setDetailsJson(details == null ? Jsons.emptyObj() : details);
+        e.setDetailsJson(details);
         return auditEventRepository.save(e);
     }
 

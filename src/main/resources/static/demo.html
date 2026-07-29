@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Live Demo — AML in Action</title>
+  <link rel="stylesheet" href="/css/app.css?v=3" />
+  <style>
+    .stepper { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; }
+    .stepper .stp {
+      flex: 1; border: 1px solid var(--border); border-radius: 6px; background: var(--card);
+      padding: 0.7rem 0.8rem; opacity: 0.5;
+    }
+    .stepper .stp.done { opacity: 1; border-color: var(--green); }
+    .stepper .stp.active { opacity: 1; border-color: var(--accent); box-shadow: var(--shadow); }
+    .stp .n { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .stp .t { font-weight: 650; margin-top: 0.2rem; font-size: 0.92rem; }
+    .timeline { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .timeline .tick {
+      background: var(--navy-2); color: #e5eef7; border-radius: 4px;
+      padding: 0.35rem 0.65rem; font-size: 0.8rem;
+    }
+    .timeline .tick b { color: #ffb3b8; }
+    .result-card { border-left: 4px solid var(--navy-2); }
+    .result-card.ok { border-left-color: var(--green); }
+    .result-card.hold { border-left-color: var(--accent); }
+    .kv { display: grid; grid-template-columns: 190px 1fr; row-gap: 0.3rem; font-size: 0.92rem; margin-top: 0.6rem; }
+    .kv dt { color: var(--muted); }
+    .kv dd { margin: 0; }
+    .banner {
+      border: 1px solid var(--accent); background: #fde7ea; color: var(--accent);
+      border-radius: 6px; padding: 0.8rem 1rem; margin-bottom: 1rem; display: none;
+    }
+    .banner.show { display: block; }
+    .final-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .big-action { font-size: 1.05rem; padding: 0.8rem 1.6rem; }
+    .spin { display: inline-block; width: 0.9em; height: 0.9em; border: 2px solid #fff;
+      border-top-color: transparent; border-radius: 50%; animation: rot 0.7s linear infinite;
+      vertical-align: -0.12em; margin-right: 0.45rem; }
+    @keyframes rot { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Live Demo <span>Two payments · two controls</span></div>
+    <nav class="nav">
+      <a href="/">Case Queue</a>
+      <a href="/sanctions.html">Sanctions Review</a>
+      <a href="/stats.html">Rule Stats</a>
+      <a class="active" href="/demo.html">Live Demo</a>
+      <button class="btn ghost" id="resetBtn" type="button" style="color:#fff;border-color:#3a5a7a">Reset demo</button>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <div class="banner" id="banner"></div>
+
+    <div class="stepper" id="stepper"></div>
+
+    <div class="timeline">
+      <span class="tick"><b>Yesterday 16:10–17:05</b>&nbsp; ACME activity window</span>
+      <span class="tick"><b>Yesterday 16:52</b>&nbsp; Payment A executed</span>
+      <span class="tick"><b>Today 02:00</b>&nbsp; Overnight monitoring</span>
+      <span class="tick"><b>Now</b>&nbsp; Payment B submitted live</span>
+    </div>
+
+    <section class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2 id="actionTitle">Preparing…</h2>
+        <button class="btn big-action" id="mainBtn" type="button" disabled>Loading…</button>
+      </div>
+      <p class="muted" id="actionHint" style="margin-top:0.5rem"></p>
+    </section>
+
+    <section class="panel result-card" id="cardA" style="display:none">
+      <h3>Payment A — sanctions screening</h3>
+      <dl class="kv" id="kvA"></dl>
+    </section>
+
+    <section class="panel result-card" id="cardActivity" style="display:none">
+      <h3>That day's activity — 16:10 → 17:05</h3>
+      <dl class="kv" id="kvActivity"></dl>
+    </section>
+
+    <section class="panel result-card" id="cardCase" style="display:none">
+      <h3>Overnight monitoring — one new case</h3>
+      <dl class="kv" id="kvCase"></dl>
+      <p style="margin-top:0.7rem">
+        <a class="btn secondary" id="openCaseLink" href="#">Open the case Sarah is investigating</a>
+      </p>
+    </section>
+
+    <div class="final-cards">
+      <section class="panel result-card ok" id="cardFinalCase" style="display:none">
+        <h3>Case raised</h3>
+        <dl class="kv" id="kvFinalCase"></dl>
+      </section>
+      <section class="panel result-card hold" id="cardB" style="display:none">
+        <h3>Payment B — held before execution</h3>
+        <dl class="kv" id="kvB"></dl>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">Two controls, two outcomes: transaction monitoring prioritises behaviour; sanctions screening gates the payment itself.</footer>
+
+  <script src="/js/api.js?v=3"></script>
+  <script>
+    const STEPS = [
+      { key: 'READY',               title: 'Create Payment A',       hint: 'ACME Trading pays £26,000 to Sahel Logistics NG. Sanctions screening runs first — a release here means no potential list match, not "no risk of any kind".' },
+      { key: 'PAYMENT_A_RELEASED',   title: 'Complete day activity',  hint: 'Fill in the rest of that day: three credits in, then the money disperses to five beneficiaries within the hour.' },
+      { key: 'ACTIVITY_READY',      title: 'Run overnight monitoring', hint: 'At 02:00 the sweep looks back over the last 24 hours for every customer. Not one signal now — amount deviation, rapid dispersal, new counterparties and a higher-risk jurisdiction together.' },
+      { key: 'CASE_RAISED',         title: 'Submit Payment B',       hint: 'A second payment, live now: the beneficiary name closely matches a listed person, and date of birth and nationality agree. Screening holds the payment before it can execute.' },
+      { key: 'PAYMENT_B_HELD',      title: 'Demo complete',          hint: 'The first payment executed, then became part of a high-priority investigation. The second was held at the gate. Reset to run it again.' }
+    ];
+
+    let state = null;
+    let busy = false;
+
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const gbp = n => n == null ? '—' : '£' + Number(n).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const ts = t => t ? new Date(t).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) : '—';
+
+    function showBanner(msg, withRefresh) {
+      const b = $('banner');
+      b.innerHTML = esc(msg) + (withRefresh ? ' <a href="#" id="refreshLink">Refresh state</a>' : '');
+      b.classList.add('show');
+      const link = $('refreshLink');
+      if (link) link.onclick = e => { e.preventDefault(); loadState(); };
+    }
+    function hideBanner() { $('banner').classList.remove('show'); }
+
+    function renderStepper() {
+      const order = STEPS.map(s => s.key);
+      const idx = order.indexOf(state.step);
+      $('stepper').innerHTML = STEPS.map((s, i) => {
+        const cls = i < idx ? 'done' : (i === idx ? 'active' : '');
+        return `<div class="stp ${cls}"><div class="n">Step ${i + 1}</div><div class="t">${esc(s.title)}</div></div>`;
+      }).join('');
+      $('actionTitle').textContent = STEPS[idx] ? `Step ${idx + 1} of 5 — ${STEPS[idx].title}` : 'Demo complete';
+      $('actionHint').textContent = STEPS[idx] ? STEPS[idx].hint : '';
+      const btn = $('mainBtn');
+      btn.textContent = STEPS[idx] ? STEPS[idx].title : 'Done';
+      btn.disabled = busy || state.step === 'PAYMENT_B_HELD';
+    }
+
+    function renderResults() {
+      const a = state.anchorPayment;
+      if (a) {
+        $('cardA').style.display = '';
+        $('kvA').innerHTML = `
+          <dt>Status</dt><dd><strong>${esc(a.status)}</strong> — released and executed</dd>
+          <dt>Payment reference</dt><dd class="mono">${esc(a.txnRef)}</dd>
+          <dt>Executed at (business time)</dt><dd>${ts(a.executedAt)}</dd>
+          <dt>Screening outcome</dt><dd>${esc(state.screeningOutcome === 'NO_POTENTIAL_MATCH' ? 'No potential sanctions match' : state.screeningOutcome || '—')}</dd>`;
+      }
+      const act = state.activity;
+      if (act) {
+        $('cardActivity').style.display = '';
+        $('kvActivity').innerHTML = `
+          <dt>Transactions in window</dt><dd><strong>${act.transactionCount}</strong> over ${act.windowMinutes} minutes</dd>
+          <dt>Inbound</dt><dd>${gbp(act.inboundGbp)}</dd>
+          <dt>Outbound</dt><dd>${gbp(act.outboundGbp)}</dd>
+          <dt>Dispersal ratio</dt><dd>${act.dispersalRatio != null ? (Number(act.dispersalRatio) * 100).toFixed(1) + '%' : '—'}</dd>
+          <dt>First-time beneficiaries</dt><dd>${act.newCounterpartyCount}</dd>`;
+      }
+      const mon = state.monitoring;
+      const c = state.raisedCase;
+      if (c) {
+        $('cardCase').style.display = '';
+        $('kvCase').innerHTML = `
+          ${mon ? `
+          <dt>Customers evaluated</dt><dd>${mon.customersEvaluated}</dd>
+          <dt>Suppressed (case already open)</dt><dd>${mon.suppressedOpenCase}</dd>
+          <dt>New cases</dt><dd><strong>${mon.casesRaised}</strong></dd>` : ''}
+          <dt>Case</dt><dd class="mono"><strong>${esc(c.caseRef)}</strong></dd>
+          <dt>Priority</dt><dd><span class="band ${esc(c.priorityBand)}">${esc(c.priorityBand)}</span> · score ${esc(c.priorityScore)}</dd>
+          <dt>Same payment, in evidence</dt><dd class="mono">${esc(c.focusTxnRef || '—')}</dd>
+          <dt>Opened by</dt><dd>Monitoring run, as of ${ts(state.simulatedAsOf)}</dd>`;
+        $('openCaseLink').href = `/case.html?id=${c.id}`;
+        $('cardFinalCase').style.display = '';
+        $('kvFinalCase').innerHTML = `
+          <dt>Case</dt><dd class="mono">${esc(c.caseRef)}</dd>
+          <dt>Priority</dt><dd><span class="band ${esc(c.priorityBand)}">${esc(c.priorityBand)}</span> · ${esc(c.priorityScore)}</dd>
+          <dt>What it means</dt><dd>Behaviour prioritised for investigation — every point traceable to a rule</dd>`;
+      }
+      const b = state.sanctionsHold;
+      if (b) {
+        $('cardB').style.display = '';
+        $('kvB').innerHTML = `
+          <dt>Payment reference</dt><dd class="mono">${esc(b.txnRef)}</dd>
+          <dt>Status</dt><dd><strong>${esc(b.status)}</strong> — not executed</dd>
+          <dt>Screening outcome</dt><dd>Potential sanctions list match</dd>
+          <dt>Name similarity</dt><dd>${b.nameSimilarity != null ? esc(b.nameSimilarity) + ' (0–1 similarity, not an identity probability)' : '—'}</dd>
+          <dt>Date of birth</dt><dd>${esc(b.dateOfBirthMatch)}</dd>
+          <dt>Nationality</dt><dd>${esc(b.nationalityMatch)}</dd>`;
+      }
+    }
+
+    async function loadState() {
+      try {
+        state = await api('/api/demo/scenario');
+        hideBanner();
+      } catch (e) {
+        showBanner(e.message + ' — the demo data may need a reset.', false);
+        $('mainBtn').disabled = true;
+        return;
+      }
+      renderStepper();
+      renderResults();
+    }
+
+    const ACTION_BY_STEP = {
+      READY: '/api/demo/scenario/payment-a',
+      PAYMENT_A_RELEASED: '/api/demo/scenario/activity',
+      ACTIVITY_READY: '/api/demo/scenario/run-monitoring',
+      CASE_RAISED: '/api/demo/scenario/payment-b'
+    };
+
+    $('mainBtn').onclick = async () => {
+      if (busy) return;
+      const url = ACTION_BY_STEP[state.step];
+      if (!url) return;
+      busy = true;
+      const btn = $('mainBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spin"></span>Working…';
+      try {
+        state = await api(url, { method: 'POST', body: '{}' });
+        hideBanner();
+        renderStepper();
+        renderResults();
+      } catch (e) {
+        const conflict = /step|scenario|409/i.test(e.message || '');
+        showBanner(e.message + (conflict ? ' The page may be behind the server.' : ''), conflict);
+        renderStepper();
+      } finally {
+        busy = false;
+        btn.disabled = false;
+        renderStepper();
+      }
+    };
+
+    $('resetBtn').onclick = async () => {
+      if (busy) return;
+      busy = true;
+      const btn = $('mainBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spin"></span>Rebuilding the full demo data set…';
+      showBanner('Full reset in progress — rebuilding customers, history and the case queue. This takes a few seconds.', false);
+      try {
+        await api('/api/demo/reset', { method: 'POST', body: '{}' });
+        ['cardA','cardActivity','cardCase','cardFinalCase','cardB'].forEach(id => $(id).style.display = 'none');
+        await loadState();
+      } catch (e) {
+        showBanner(e.message, false);
+      } finally {
+        busy = false;
+        renderStepper();
+      }
+    };
+
+    loadState();
+  </script>
+</body>
+</html>
